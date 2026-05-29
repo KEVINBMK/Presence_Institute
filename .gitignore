@@ -1,0 +1,27 @@
+# Secrets locaux — ne jamais versionner ni inclure dans un ZIP partagé
+.env
+.env.local
+.env.*.local
+backend/.env.local
+backend/.env.*.local
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
+
+# Fichiers locaux Symfony (copier depuis .env.example / .env.local.example)
+backend/.env
+backend/.env.dev
+
+/backend/vendor/
+/backend/var/
+/frontend/node_modules/
+/frontend/dist/
+.idea/
+*.log
+
+# Archives locales (ne pas publier — peuvent contenir vendor, .env, node_modules)
+*.zip
+*.rar
+*.7z
+
+# Garder les exemples versionnés : .env.example, .env.local.example (sans secrets)

@@ -1,0 +1,11 @@
+<?php
+
+namespace App\Enum;
+
+enum TypeNotification: string
+{
+    case ARRIVEE_USAGER = 'ARRIVEE_USAGER';
+    case FIN_PRISE_EN_CHARGE = 'FIN_PRISE_EN_CHARGE';
+    case PERSONNEL_NON_DISPONIBLE = 'PERSONNEL_NON_DISPONIBLE';
+    case DECISION_RECEPTION = 'DECISION_RECEPTION';
+}

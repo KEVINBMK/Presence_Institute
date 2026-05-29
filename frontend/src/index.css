@@ -1,0 +1,78 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-institution: #1b4d3e;
+  --color-institution-dark: #143a30;
+  --color-ivory: #f4f0e8;
+  --color-ivory-dark: #e8e2d6;
+  --color-anthracite: #2a2a2a;
+  --color-anthracite-muted: #5c5c5c;
+  --color-copper: #b87333;
+  --color-copper-light: #d4a574;
+  --color-border: #d4cfc4;
+  --color-surface: #ffffff;
+  --color-success: #2d6a4f;
+  --color-warning: #9a6b2f;
+  --color-danger: #8b3a3a;
+  --color-info: #3d5a80;
+
+  --font-serif: 'Fraunces', 'Libre Baskerville', Georgia, serif;
+  --font-sans: 'Source Sans 3', system-ui, sans-serif;
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+
+  --spacing-unit: 8px;
+}
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    font-family: var(--font-sans);
+    color: var(--color-anthracite);
+    background-color: var(--color-ivory);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+  }
+
+  h1,
+  h2,
+  h3,
+  .font-serif {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-copper);
+    outline-offset: 2px;
+  }
+}
+
+@layer utilities {
+  .paper-pattern {
+    background-color: var(--color-ivory);
+    background-image:
+      linear-gradient(var(--color-border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--color-border) 1px, transparent 1px);
+    background-size: 24px 24px;
+    background-position: -1px -1px;
+    opacity: 1;
+  }
+
+  .paper-pattern-subtle {
+    background-image:
+      radial-gradient(circle at 1px 1px, rgb(27 77 62 / 0.06) 1px, transparent 0);
+    background-size: 16px 16px;
+  }
+}

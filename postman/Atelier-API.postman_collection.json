@@ -1,0 +1,2127 @@
+{
+  "info": {
+    "name": "Atelier — Gestion rendez-vous",
+    "description": "## Démarrer l'API\n```powershell\ncd backend\nphp bin/console doctrine:fixtures:load --group=demo --no-interaction\nphp -S 127.0.0.1:8000 -t public\n```\n\n## Importer\n1. Cette collection\n2. `Atelier-local.postman_environment.json`\n\n## Soutenance\n**Run folder** → **Scénario DEMO — Données fixtures A–F (prioritaire)**\n\n## Usager (nouvelle règle)\n**Soumission demande usager** — POST sans `heureDebut`.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "if (!pm.collectionVariables.get('baseUrl')) {",
+          "  pm.collectionVariables.set('baseUrl', 'http://127.0.0.1:8000');",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:8000"
+    },
+    {
+      "key": "today",
+      "value": ""
+    },
+    {
+      "key": "uniquePhone",
+      "value": "0600000001"
+    },
+    {
+      "key": "bureauId",
+      "value": ""
+    },
+    {
+      "key": "rdvId",
+      "value": "4"
+    },
+    {
+      "key": "reference",
+      "value": ""
+    },
+    {
+      "key": "visiteId",
+      "value": "1"
+    },
+    {
+      "key": "usagerId",
+      "value": "1"
+    },
+    {
+      "key": "personnelId",
+      "value": "1"
+    },
+    {
+      "key": "notificationId",
+      "value": "1"
+    },
+    {
+      "key": "heureDebut",
+      "value": "14:00"
+    },
+    {
+      "key": "futureDate",
+      "value": ""
+    },
+    {
+      "key": "visiteReference",
+      "value": ""
+    },
+    {
+      "key": "rdvRefScenarioA",
+      "value": "RDV-2026-000001"
+    },
+    {
+      "key": "rdvRefScenarioB1",
+      "value": "RDV-2026-000002"
+    },
+    {
+      "key": "rdvRefScenarioB2",
+      "value": "RDV-2026-000003"
+    },
+    {
+      "key": "rdvRefScenarioB3",
+      "value": "RDV-2026-000004"
+    },
+    {
+      "key": "visiteRefScenarioA",
+      "value": "VIS-2026-000001"
+    },
+    {
+      "key": "visiteRefScenarioB",
+      "value": "VIS-2026-000002"
+    },
+    {
+      "key": "usagerTelScenarioA",
+      "value": "0890000001"
+    },
+    {
+      "key": "usagerTelScenarioB",
+      "value": "0890000002"
+    },
+    {
+      "key": "usagerTelScenarioC",
+      "value": "0890000003"
+    },
+    {
+      "key": "usagerTelScenarioD",
+      "value": "0890000004"
+    },
+    {
+      "key": "usagerTelScenarioE",
+      "value": "0890000005"
+    },
+    {
+      "key": "usagerTelScenarioF",
+      "value": "0890000006"
+    }
+  ],
+  "item": [
+    {
+      "name": "Référence",
+      "description": "Requêtes isolées pour tester une route.",
+      "item": [
+        {
+          "name": "GET Bureaux actifs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/bureaux",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const today = new Date().toISOString().split('T')[0];",
+                  "pm.collectionVariables.set('today', today);",
+                  "pm.environment.set('today', today);",
+                  "const phone = '06' + String(Date.now()).slice(-8);",
+                  "pm.collectionVariables.set('uniquePhone', phone);",
+                  "pm.environment.set('uniquePhone', phone);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));",
+                  "const list = pm.response.json().data || [];",
+                  "if (list.length) {",
+                  "  const id = String(list[0].id);",
+                  "  pm.collectionVariables.set(\"bureauId\", id);",
+                  "  pm.environment.set(\"bureauId\", id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Créneaux bureau",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/bureaux/{{bureauId}}/creneaux?date={{today}}",
+            "description": "bureauId auto si vide (script pré-requête)."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const base = pm.collectionVariables.get('baseUrl') || 'http://127.0.0.1:8000';",
+                  "let bureauId = pm.collectionVariables.get('bureauId') || pm.environment.get('bureauId');",
+                  "if (!bureauId || String(bureauId).trim() === '') {",
+                  "  const res = pm.sendRequest({ url: base + '/api/bureaux', method: 'GET', header: { Accept: 'application/json' } });",
+                  "  const list = res.json().data || [];",
+                  "  if (!list.length) throw new Error('Aucun bureau actif — lancez doctrine:fixtures:load --group=demo');",
+                  "  bureauId = String(list[0].id);",
+                  "  pm.collectionVariables.set('bureauId', bureauId);",
+                  "  pm.environment.set('bureauId', bureauId);",
+                  "} else {",
+                  "  pm.collectionVariables.set('bureauId', String(bureauId));",
+                  "}",
+                  "if (!pm.collectionVariables.get('today')) {",
+                  "  const today = new Date().toISOString().split('T')[0];",
+                  "  pm.collectionVariables.set('today', today);",
+                  "  pm.environment.set('today', today);",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST Demande rendez-vous",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/rendez-vous",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"Test\",\n  \"prenom\": \"Ref\",\n  \"telephone\": \"{{uniquePhone}}\",\n  \"typeUsager\": \"CITOYEN\",\n  \"bureauId\": {{bureauId}},\n  \"dateSouhaitee\": \"{{today}}\",\n  \"motif\": \"Test référence\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const today = new Date().toISOString().split('T')[0];",
+                  "pm.collectionVariables.set('today', today);",
+                  "pm.environment.set('today', today);",
+                  "const phone = '06' + String(Date.now()).slice(-8);",
+                  "pm.collectionVariables.set('uniquePhone', phone);",
+                  "pm.environment.set('uniquePhone', phone);",
+                  "const base = pm.collectionVariables.get('baseUrl') || 'http://127.0.0.1:8000';",
+                  "let bureauId = pm.collectionVariables.get('bureauId') || pm.environment.get('bureauId');",
+                  "if (!bureauId || String(bureauId).trim() === '') {",
+                  "  const res = pm.sendRequest({ url: base + '/api/bureaux', method: 'GET', header: { Accept: 'application/json' } });",
+                  "  const list = res.json().data || [];",
+                  "  if (!list.length) throw new Error('Aucun bureau actif — lancez doctrine:fixtures:load --group=demo');",
+                  "  bureauId = String(list[0].id);",
+                  "  pm.collectionVariables.set('bureauId', bureauId);",
+                  "  pm.environment.set('bureauId', bureauId);",
+                  "} else {",
+                  "  pm.collectionVariables.set('bureauId', String(bureauId));",
+                  "}",
+                  "if (!pm.collectionVariables.get('today')) {",
+                  "  const today = new Date().toISOString().split('T')[0];",
+                  "  pm.collectionVariables.set('today', today);",
+                  "  pm.environment.set('today', today);",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));",
+                  "const json = pm.response.json();",
+                  "if (json.data?.id) pm.collectionVariables.set(\"rdvId\", String(json.data.id));",
+                  "if (json.data?.reference) pm.collectionVariables.set(\"reference\", json.data.reference);",
+                  "if (json.data?.personnel?.id) {",
+                  "  pm.collectionVariables.set(\"personnelId\", String(json.data.personnel.id));",
+                  "  pm.environment.set(\"personnelId\", String(json.data.personnel.id));",
+                  "}",
+                  "if (json.data?.usager?.id) pm.collectionVariables.set(\"usagerId\", String(json.data.usager.id));",
+                  "if (json.data?.bureau?.id) pm.collectionVariables.set(\"bureauId\", String(json.data.bureau.id));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET RDV par référence",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/rendez-vous/reference/{{reference}}",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET RDV du jour (réception)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/reception/rendez-vous-du-jour",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Recherche réception",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/reception/recherche?query={{uniquePhone}}",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Notifications réception",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/reception/notifications",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Soumission demande usager",
+      "description": "POST demande — planification auto (CONFIRME ou DEMANDE). Sans heureDebut côté client.",
+      "item": [
+        {
+          "name": "1. Initialiser date et téléphone",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/bureaux",
+            "description": "Ping + variables today / uniquePhone / bureauId"
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const today = new Date().toISOString().split('T')[0];",
+                  "pm.collectionVariables.set('today', today);",
+                  "pm.environment.set('today', today);",
+                  "const phone = '06' + String(Date.now()).slice(-8);",
+                  "pm.collectionVariables.set('uniquePhone', phone);",
+                  "pm.environment.set('uniquePhone', phone);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));",
+                  "const list = pm.response.json().data || [];",
+                  "if (list.length) {",
+                  "  const id = String(list[0].id);",
+                  "  pm.collectionVariables.set(\"bureauId\", id);",
+                  "  pm.environment.set(\"bureauId\", id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2. Soumettre demande",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/rendez-vous",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"Demande\",\n  \"prenom\": \"Usager\",\n  \"telephone\": \"{{uniquePhone}}\",\n  \"email\": \"demande@demo.c2i.cd\",\n  \"typeUsager\": \"CITOYEN\",\n  \"bureauId\": {{bureauId}},\n  \"dateSouhaitee\": \"{{today}}\",\n  \"periodeSouhaitee\": \"MATIN\",\n  \"motif\": \"Soumission demande — test planification\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const base = pm.collectionVariables.get('baseUrl') || 'http://127.0.0.1:8000';",
+                  "let bureauId = pm.collectionVariables.get('bureauId') || pm.environment.get('bureauId');",
+                  "if (!bureauId || String(bureauId).trim() === '') {",
+                  "  const res = pm.sendRequest({ url: base + '/api/bureaux', method: 'GET', header: { Accept: 'application/json' } });",
+                  "  const list = res.json().data || [];",
+                  "  if (!list.length) throw new Error('Aucun bureau actif — lancez doctrine:fixtures:load --group=demo');",
+                  "  bureauId = String(list[0].id);",
+                  "  pm.collectionVariables.set('bureauId', bureauId);",
+                  "  pm.environment.set('bureauId', bureauId);",
+                  "} else {",
+                  "  pm.collectionVariables.set('bureauId', String(bureauId));",
+                  "}",
+                  "if (!pm.collectionVariables.get('today')) {",
+                  "  const today = new Date().toISOString().split('T')[0];",
+                  "  pm.collectionVariables.set('today', today);",
+                  "  pm.environment.set('today', today);",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));",
+                  "const json = pm.response.json();",
+                  "if (json.data?.id) pm.collectionVariables.set(\"rdvId\", String(json.data.id));",
+                  "if (json.data?.reference) pm.collectionVariables.set(\"reference\", json.data.reference);",
+                  "if (json.data?.personnel?.id) {",
+                  "  pm.collectionVariables.set(\"personnelId\", String(json.data.personnel.id));",
+                  "  pm.environment.set(\"personnelId\", String(json.data.personnel.id));",
+                  "}",
+                  "if (json.data?.usager?.id) pm.collectionVariables.set(\"usagerId\", String(json.data.usager.id));",
+                  "if (json.data?.bureau?.id) pm.collectionVariables.set(\"bureauId\", String(json.data.bureau.id));",
+                  "const j = pm.response.json();",
+                  "pm.test('statut CONFIRME ou DEMANDE', () => pm.expect(['CONFIRME','DEMANDE']).to.include(j.data.statut));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Scénario 1 — Usager : demander un RDV",
+      "description": "Bureaux → soumettre demande → consulter par référence.",
+      "item": [
+        {
+          "name": "1.1 Initialiser date et téléphone unique",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/bureaux",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const today = new Date().toISOString().split('T')[0];",
+                  "pm.collectionVariables.set('today', today);",
+                  "pm.environment.set('today', today);",
+                  "const phone = '06' + String(Date.now()).slice(-8);",
+                  "pm.collectionVariables.set('uniquePhone', phone);",
+                  "pm.environment.set('uniquePhone', phone);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));",
+                  "const list = pm.response.json().data || [];",
+                  "if (list.length) {",
+                  "  const id = String(list[0].id);",
+                  "  pm.collectionVariables.set(\"bureauId\", id);",
+                  "  pm.environment.set(\"bureauId\", id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.2 Lister bureaux",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/bureaux",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.3 Soumettre demande",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/rendez-vous",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"Scenario\",\n  \"prenom\": \"Postman\",\n  \"telephone\": \"{{uniquePhone}}\",\n  \"email\": \"scenario@example.com\",\n  \"typeUsager\": \"CITOYEN\",\n  \"bureauId\": {{bureauId}},\n  \"dateSouhaitee\": \"{{today}}\",\n  \"motif\": \"Scénario 1 — demande usager\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const base = pm.collectionVariables.get('baseUrl') || 'http://127.0.0.1:8000';",
+                  "let bureauId = pm.collectionVariables.get('bureauId') || pm.environment.get('bureauId');",
+                  "if (!bureauId || String(bureauId).trim() === '') {",
+                  "  const res = pm.sendRequest({ url: base + '/api/bureaux', method: 'GET', header: { Accept: 'application/json' } });",
+                  "  const list = res.json().data || [];",
+                  "  if (!list.length) throw new Error('Aucun bureau actif — lancez doctrine:fixtures:load --group=demo');",
+                  "  bureauId = String(list[0].id);",
+                  "  pm.collectionVariables.set('bureauId', bureauId);",
+                  "  pm.environment.set('bureauId', bureauId);",
+                  "} else {",
+                  "  pm.collectionVariables.set('bureauId', String(bureauId));",
+                  "}",
+                  "if (!pm.collectionVariables.get('today')) {",
+                  "  const today = new Date().toISOString().split('T')[0];",
+                  "  pm.collectionVariables.set('today', today);",
+                  "  pm.environment.set('today', today);",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));",
+                  "const json = pm.response.json();",
+                  "if (json.data?.id) pm.collectionVariables.set(\"rdvId\", String(json.data.id));",
+                  "if (json.data?.reference) pm.collectionVariables.set(\"reference\", json.data.reference);",
+                  "if (json.data?.personnel?.id) {",
+                  "  pm.collectionVariables.set(\"personnelId\", String(json.data.personnel.id));",
+                  "  pm.environment.set(\"personnelId\", String(json.data.personnel.id));",
+                  "}",
+                  "if (json.data?.usager?.id) pm.collectionVariables.set(\"usagerId\", String(json.data.usager.id));",
+                  "if (json.data?.bureau?.id) pm.collectionVariables.set(\"bureauId\", String(json.data.bureau.id));",
+                  "const j=pm.response.json();",
+                  "pm.test('planif',()=>pm.expect(['CONFIRME','DEMANDE']).to.include(j.data.statut));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.4 Consulter par référence",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/rendez-vous/reference/{{reference}}",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Scénario 2 — Réception : arrivée et visite",
+      "description": "Après scénario 1 (rdvId CONFIRME).",
+      "item": [
+        {
+          "name": "2.1 RDV du jour",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/reception/rendez-vous-du-jour",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.2 Enregistrer arrivée",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/reception/rendez-vous/{{rdvId}}/arrivee",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));",
+                  "const json = pm.response.json();",
+                  "if (json.data?.id) pm.collectionVariables.set(\"rdvId\", String(json.data.id));",
+                  "if (json.data?.reference) pm.collectionVariables.set(\"reference\", json.data.reference);",
+                  "if (json.data?.personnel?.id) {",
+                  "  pm.collectionVariables.set(\"personnelId\", String(json.data.personnel.id));",
+                  "  pm.environment.set(\"personnelId\", String(json.data.personnel.id));",
+                  "}",
+                  "if (json.data?.usager?.id) pm.collectionVariables.set(\"usagerId\", String(json.data.usager.id));",
+                  "if (json.data?.bureau?.id) pm.collectionVariables.set(\"bureauId\", String(json.data.bureau.id));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.3 Ouvrir visite",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/reception/visites",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usagerId\": \"{{usagerId}}\",\n  \"receptionId\": 1,\n  \"rendezVousIds\": [\n    \"{{rdvId}}\"\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));",
+                  "const j=pm.response.json();",
+                  "if (j.data?.id) pm.collectionVariables.set(\"visiteId\", String(j.data.id));",
+                  "if (j.data?.reference) pm.collectionVariables.set(\"visiteReference\", j.data.reference);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.4 Détail visite",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/reception/visites/{{visiteId}}",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.5 Orienter usager",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/reception/visites/{{visiteId}}/orienter",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"personnelId\": \"{{personnelId}}\",\n  \"rendezVousId\": \"{{rdvId}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Scénario 3 — Personnel : prise en charge",
+      "description": "Après orientation (scénario 2).",
+      "item": [
+        {
+          "name": "3.1 Liste RDV personnel",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/personnel/{{personnelId}}/rendez-vous",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3.2 Démarrer prise en charge",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": "{{baseUrl}}/api/personnel/{{personnelId}}/rendez-vous/{{rdvId}}/demarrer",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));",
+                  "const json = pm.response.json();",
+                  "if (json.data?.id) pm.collectionVariables.set(\"rdvId\", String(json.data.id));",
+                  "if (json.data?.reference) pm.collectionVariables.set(\"reference\", json.data.reference);",
+                  "if (json.data?.personnel?.id) {",
+                  "  pm.collectionVariables.set(\"personnelId\", String(json.data.personnel.id));",
+                  "  pm.environment.set(\"personnelId\", String(json.data.personnel.id));",
+                  "}",
+                  "if (json.data?.usager?.id) pm.collectionVariables.set(\"usagerId\", String(json.data.usager.id));",
+                  "if (json.data?.bureau?.id) pm.collectionVariables.set(\"bureauId\", String(json.data.bureau.id));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3.3 Clôturer prise en charge",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": "{{baseUrl}}/api/personnel/{{personnelId}}/rendez-vous/{{rdvId}}/cloturer",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));",
+                  "const json = pm.response.json();",
+                  "if (json.data?.id) pm.collectionVariables.set(\"rdvId\", String(json.data.id));",
+                  "if (json.data?.reference) pm.collectionVariables.set(\"reference\", json.data.reference);",
+                  "if (json.data?.personnel?.id) {",
+                  "  pm.collectionVariables.set(\"personnelId\", String(json.data.personnel.id));",
+                  "  pm.environment.set(\"personnelId\", String(json.data.personnel.id));",
+                  "}",
+                  "if (json.data?.usager?.id) pm.collectionVariables.set(\"usagerId\", String(json.data.usager.id));",
+                  "if (json.data?.bureau?.id) pm.collectionVariables.set(\"bureauId\", String(json.data.bureau.id));",
+                  "const j=pm.response.json();",
+                  "if (j.data?.statut) pm.test('TERMINE', () => pm.expect(j.data.statut).to.eql('TERMINE'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3.4 Notifications réception",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/reception/notifications",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));",
+                  "const items = pm.response.json().data || [];",
+                  "pm.test('notification FIN_PRISE_EN_CHARGE', () => {",
+                  "  const found = items.some(n => n.type === 'FIN_PRISE_EN_CHARGE');",
+                  "  pm.expect(found).to.be.true;",
+                  "});",
+                  "const fin = items.find(n => n.type === 'FIN_PRISE_EN_CHARGE');",
+                  "if (fin?.id) pm.collectionVariables.set('notificationId', String(fin.id));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Scénario 4 — Réception : décision et clôture",
+      "description": "Après notification personnel.",
+      "item": [
+        {
+          "name": "4.1 Décision CONTINUER",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/reception/visites/{{visiteId}}/decision",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"decision\": \"CONTINUER\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "4.2 Historique visite",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/visites/{{visiteId}}/historique",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "4.3 Marquer notification lue",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": "{{baseUrl}}/api/notifications/{{notificationId}}/lire",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "4.4 Traiter notification",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": "{{baseUrl}}/api/notifications/{{notificationId}}/traiter",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "4.5 Clôturer visite",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": "{{baseUrl}}/api/reception/visites/{{visiteId}}/cloturer",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Scénario 5 — COMPLET",
+      "description": "Parcours dynamique bout en bout (hors fixtures DEMO). Run ce dossier après API + base vide ou rechargée.",
+      "item": [
+        {
+          "name": "1.1 Initialiser date et téléphone unique",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/bureaux",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const today = new Date().toISOString().split('T')[0];",
+                  "pm.collectionVariables.set('today', today);",
+                  "pm.environment.set('today', today);",
+                  "const phone = '06' + String(Date.now()).slice(-8);",
+                  "pm.collectionVariables.set('uniquePhone', phone);",
+                  "pm.environment.set('uniquePhone', phone);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));",
+                  "const list = pm.response.json().data || [];",
+                  "if (list.length) {",
+                  "  const id = String(list[0].id);",
+                  "  pm.collectionVariables.set(\"bureauId\", id);",
+                  "  pm.environment.set(\"bureauId\", id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.2 Lister bureaux",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/bureaux",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.3 Soumettre demande",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/rendez-vous",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"Scenario\",\n  \"prenom\": \"Postman\",\n  \"telephone\": \"{{uniquePhone}}\",\n  \"email\": \"scenario@example.com\",\n  \"typeUsager\": \"CITOYEN\",\n  \"bureauId\": {{bureauId}},\n  \"dateSouhaitee\": \"{{today}}\",\n  \"motif\": \"Scénario 1 — demande usager\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const base = pm.collectionVariables.get('baseUrl') || 'http://127.0.0.1:8000';",
+                  "let bureauId = pm.collectionVariables.get('bureauId') || pm.environment.get('bureauId');",
+                  "if (!bureauId || String(bureauId).trim() === '') {",
+                  "  const res = pm.sendRequest({ url: base + '/api/bureaux', method: 'GET', header: { Accept: 'application/json' } });",
+                  "  const list = res.json().data || [];",
+                  "  if (!list.length) throw new Error('Aucun bureau actif — lancez doctrine:fixtures:load --group=demo');",
+                  "  bureauId = String(list[0].id);",
+                  "  pm.collectionVariables.set('bureauId', bureauId);",
+                  "  pm.environment.set('bureauId', bureauId);",
+                  "} else {",
+                  "  pm.collectionVariables.set('bureauId', String(bureauId));",
+                  "}",
+                  "if (!pm.collectionVariables.get('today')) {",
+                  "  const today = new Date().toISOString().split('T')[0];",
+                  "  pm.collectionVariables.set('today', today);",
+                  "  pm.environment.set('today', today);",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));",
+                  "const json = pm.response.json();",
+                  "if (json.data?.id) pm.collectionVariables.set(\"rdvId\", String(json.data.id));",
+                  "if (json.data?.reference) pm.collectionVariables.set(\"reference\", json.data.reference);",
+                  "if (json.data?.personnel?.id) {",
+                  "  pm.collectionVariables.set(\"personnelId\", String(json.data.personnel.id));",
+                  "  pm.environment.set(\"personnelId\", String(json.data.personnel.id));",
+                  "}",
+                  "if (json.data?.usager?.id) pm.collectionVariables.set(\"usagerId\", String(json.data.usager.id));",
+                  "if (json.data?.bureau?.id) pm.collectionVariables.set(\"bureauId\", String(json.data.bureau.id));",
+                  "const j=pm.response.json();",
+                  "pm.test('planif',()=>pm.expect(['CONFIRME','DEMANDE']).to.include(j.data.statut));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.4 Consulter par référence",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/rendez-vous/reference/{{reference}}",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.1 RDV du jour",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/reception/rendez-vous-du-jour",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.2 Enregistrer arrivée",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/reception/rendez-vous/{{rdvId}}/arrivee",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));",
+                  "const json = pm.response.json();",
+                  "if (json.data?.id) pm.collectionVariables.set(\"rdvId\", String(json.data.id));",
+                  "if (json.data?.reference) pm.collectionVariables.set(\"reference\", json.data.reference);",
+                  "if (json.data?.personnel?.id) {",
+                  "  pm.collectionVariables.set(\"personnelId\", String(json.data.personnel.id));",
+                  "  pm.environment.set(\"personnelId\", String(json.data.personnel.id));",
+                  "}",
+                  "if (json.data?.usager?.id) pm.collectionVariables.set(\"usagerId\", String(json.data.usager.id));",
+                  "if (json.data?.bureau?.id) pm.collectionVariables.set(\"bureauId\", String(json.data.bureau.id));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.3 Ouvrir visite",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/reception/visites",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usagerId\": \"{{usagerId}}\",\n  \"receptionId\": 1,\n  \"rendezVousIds\": [\n    \"{{rdvId}}\"\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));",
+                  "const j=pm.response.json();",
+                  "if (j.data?.id) pm.collectionVariables.set(\"visiteId\", String(j.data.id));",
+                  "if (j.data?.reference) pm.collectionVariables.set(\"visiteReference\", j.data.reference);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.4 Détail visite",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/reception/visites/{{visiteId}}",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.5 Orienter usager",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/reception/visites/{{visiteId}}/orienter",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"personnelId\": \"{{personnelId}}\",\n  \"rendezVousId\": \"{{rdvId}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3.1 Liste RDV personnel",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/personnel/{{personnelId}}/rendez-vous",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3.2 Démarrer prise en charge",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": "{{baseUrl}}/api/personnel/{{personnelId}}/rendez-vous/{{rdvId}}/demarrer",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));",
+                  "const json = pm.response.json();",
+                  "if (json.data?.id) pm.collectionVariables.set(\"rdvId\", String(json.data.id));",
+                  "if (json.data?.reference) pm.collectionVariables.set(\"reference\", json.data.reference);",
+                  "if (json.data?.personnel?.id) {",
+                  "  pm.collectionVariables.set(\"personnelId\", String(json.data.personnel.id));",
+                  "  pm.environment.set(\"personnelId\", String(json.data.personnel.id));",
+                  "}",
+                  "if (json.data?.usager?.id) pm.collectionVariables.set(\"usagerId\", String(json.data.usager.id));",
+                  "if (json.data?.bureau?.id) pm.collectionVariables.set(\"bureauId\", String(json.data.bureau.id));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3.3 Clôturer prise en charge",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": "{{baseUrl}}/api/personnel/{{personnelId}}/rendez-vous/{{rdvId}}/cloturer",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));",
+                  "const json = pm.response.json();",
+                  "if (json.data?.id) pm.collectionVariables.set(\"rdvId\", String(json.data.id));",
+                  "if (json.data?.reference) pm.collectionVariables.set(\"reference\", json.data.reference);",
+                  "if (json.data?.personnel?.id) {",
+                  "  pm.collectionVariables.set(\"personnelId\", String(json.data.personnel.id));",
+                  "  pm.environment.set(\"personnelId\", String(json.data.personnel.id));",
+                  "}",
+                  "if (json.data?.usager?.id) pm.collectionVariables.set(\"usagerId\", String(json.data.usager.id));",
+                  "if (json.data?.bureau?.id) pm.collectionVariables.set(\"bureauId\", String(json.data.bureau.id));",
+                  "const j=pm.response.json();",
+                  "if (j.data?.statut) pm.test('TERMINE', () => pm.expect(j.data.statut).to.eql('TERMINE'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3.4 Notifications réception",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/reception/notifications",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));",
+                  "const items = pm.response.json().data || [];",
+                  "pm.test('notification FIN_PRISE_EN_CHARGE', () => {",
+                  "  const found = items.some(n => n.type === 'FIN_PRISE_EN_CHARGE');",
+                  "  pm.expect(found).to.be.true;",
+                  "});",
+                  "const fin = items.find(n => n.type === 'FIN_PRISE_EN_CHARGE');",
+                  "if (fin?.id) pm.collectionVariables.set('notificationId', String(fin.id));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "4.1 Décision CONTINUER",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/reception/visites/{{visiteId}}/decision",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"decision\": \"CONTINUER\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "4.2 Historique visite",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/visites/{{visiteId}}/historique",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "4.3 Marquer notification lue",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": "{{baseUrl}}/api/notifications/{{notificationId}}/lire",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "4.4 Traiter notification",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": "{{baseUrl}}/api/notifications/{{notificationId}}/traiter",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "4.5 Clôturer visite",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": "{{baseUrl}}/api/reception/visites/{{visiteId}}/cloturer",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Scénario 6 — Usager annule un RDV",
+      "description": "Indépendant.",
+      "item": [
+        {
+          "name": "6.1 Initialiser",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/bureaux",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const today = new Date().toISOString().split('T')[0];",
+                  "pm.collectionVariables.set('today', today);",
+                  "pm.environment.set('today', today);",
+                  "const phone = '06' + String(Date.now()).slice(-8);",
+                  "pm.collectionVariables.set('uniquePhone', phone);",
+                  "pm.environment.set('uniquePhone', phone);",
+                  "pm.collectionVariables.set('futureDate', new Date(Date.now()+86400000*7).toISOString().split('T')[0]);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));",
+                  "const list = pm.response.json().data || [];",
+                  "if (list.length) {",
+                  "  const id = String(list[0].id);",
+                  "  pm.collectionVariables.set(\"bureauId\", id);",
+                  "  pm.environment.set(\"bureauId\", id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "6.2 Créer RDV futur",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/rendez-vous",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"Annule\",\n  \"prenom\": \"Test\",\n  \"telephone\": \"{{uniquePhone}}\",\n  \"typeUsager\": \"CITOYEN\",\n  \"bureauId\": {{bureauId}},\n  \"dateSouhaitee\": \"{{futureDate}}\",\n  \"motif\": \"RDV à annuler\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const base = pm.collectionVariables.get('baseUrl') || 'http://127.0.0.1:8000';",
+                  "let bureauId = pm.collectionVariables.get('bureauId') || pm.environment.get('bureauId');",
+                  "if (!bureauId || String(bureauId).trim() === '') {",
+                  "  const res = pm.sendRequest({ url: base + '/api/bureaux', method: 'GET', header: { Accept: 'application/json' } });",
+                  "  const list = res.json().data || [];",
+                  "  if (!list.length) throw new Error('Aucun bureau actif — lancez doctrine:fixtures:load --group=demo');",
+                  "  bureauId = String(list[0].id);",
+                  "  pm.collectionVariables.set('bureauId', bureauId);",
+                  "  pm.environment.set('bureauId', bureauId);",
+                  "} else {",
+                  "  pm.collectionVariables.set('bureauId', String(bureauId));",
+                  "}",
+                  "if (!pm.collectionVariables.get('today')) {",
+                  "  const today = new Date().toISOString().split('T')[0];",
+                  "  pm.collectionVariables.set('today', today);",
+                  "  pm.environment.set('today', today);",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));",
+                  "const json = pm.response.json();",
+                  "if (json.data?.id) pm.collectionVariables.set(\"rdvId\", String(json.data.id));",
+                  "if (json.data?.reference) pm.collectionVariables.set(\"reference\", json.data.reference);",
+                  "if (json.data?.personnel?.id) {",
+                  "  pm.collectionVariables.set(\"personnelId\", String(json.data.personnel.id));",
+                  "  pm.environment.set(\"personnelId\", String(json.data.personnel.id));",
+                  "}",
+                  "if (json.data?.usager?.id) pm.collectionVariables.set(\"usagerId\", String(json.data.usager.id));",
+                  "if (json.data?.bureau?.id) pm.collectionVariables.set(\"bureauId\", String(json.data.bureau.id));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "6.3 Annuler RDV",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": "{{baseUrl}}/api/rendez-vous/{{rdvId}}/annuler",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));",
+                  "pm.test('ANNULE', () => pm.expect(pm.response.json().data.statut).to.eql('ANNULE'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Scénario DEMO — Données fixtures A–F (prioritaire)",
+      "description": "Soutenance : charger `php bin/console doctrine:fixtures:load --group=demo` avant Run.",
+      "item": [
+        {
+          "name": "A.1 Rechercher usager scénario A",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/reception/recherche?query={{usagerTelScenarioA}}",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "A.2 RDV par référence A",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/rendez-vous/reference/{{rdvRefScenarioA}}",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));",
+                  "pm.test('RDV TERMINE', () => pm.expect(pm.response.json().data.statut).to.eql('TERMINE'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "A.3 Historique visite A",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/visites/reference/{{visiteRefScenarioA}}/historique",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));",
+                  "const hist = pm.response.json().data || [];",
+                  "const types = hist.map(h => h.typeAction);",
+                  "pm.test('historique non vide', () => pm.expect(hist.length).to.be.above(0));",
+                  "pm.test('PRISE_EN_CHARGE_CLOTUREE', () => pm.expect(types).to.include('PRISE_EN_CHARGE_CLOTUREE'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "B.1 Rechercher usager scénario B",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/reception/recherche?query={{usagerTelScenarioB}}",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));",
+                  "pm.test('au moins 3 RDV même jour', () => pm.expect(pm.response.json().data.length).to.be.at.least(3));",
+                  "const rdvs = pm.response.json().data || [];",
+                  "const genie = rdvs.filter(r => r.bureau.nom === 'Bureau Génie Logiciel');",
+                  "pm.test('même bureau Génie Logiciel', () => pm.expect(genie.length).to.be.at.least(3));",
+                  "const persos = new Set(genie.map(r => r.personnel?.id).filter(Boolean));",
+                  "pm.test('personnels différents', () => pm.expect(persos.size).to.be.at.least(2));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "B.2 Notifications FIN_PRISE_EN_CHARGE",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/reception/notifications",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));",
+                  "const items = pm.response.json().data || [];",
+                  "pm.test('FIN_PRISE_EN_CHARGE', () => {",
+                  "  pm.expect(items.some(n => n.type === 'FIN_PRISE_EN_CHARGE')).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "C.1 Rechercher usager scénario C",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/reception/recherche?query={{usagerTelScenarioC}}",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));",
+                  "const rdvs = pm.response.json().data || [];",
+                  "const r = rdvs.find(x => x.reference === 'RDV-2026-000005');",
+                  "if (r?.personnel?.id) {",
+                  "  pm.collectionVariables.set('personnelId', String(r.personnel.id));",
+                  "  pm.environment.set('personnelId', String(r.personnel.id));",
+                  "}",
+                  "pm.test('RDV ARRIVE', () => pm.expect(r?.statut).to.eql('ARRIVE'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "C.2 PATCH disponibilité personnel",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/personnel/{{personnelId}}/disponibilite",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"disponibiliteOperationnelle\": \"NON_DISPONIBLE_POUR_RECEPTION\",\n  \"motifNonReception\": \"Indisponible pour démo Postman\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));",
+                  "pm.test('NON_DISPONIBLE', () => pm.expect(pm.response.json().data.disponibiliteOperationnelle).to.eql('NON_DISPONIBLE_POUR_RECEPTION'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "D — Retard (recherche)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/reception/recherche?query={{usagerTelScenarioD}}",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "E — Non présenté",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/rendez-vous/reference/RDV-2026-000007",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));",
+                  "pm.test('NON_PRESENTE', () => pm.expect(pm.response.json().data.statut).to.eql('NON_PRESENTE'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "F — Annulation",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/rendez-vous/reference/RDV-2026-000008",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));",
+                  "pm.test('ANNULE', () => pm.expect(pm.response.json().data.statut).to.eql('ANNULE'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Usager — plusieurs RDV même bureau",
+      "description": "Scénario B : 0890000002, 3 RDV Bureau Génie Logiciel, personnels distincts.",
+      "item": [
+        {
+          "name": "1. GET personnels démo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/personnel",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));",
+                  "pm.test('10 personnels', () => pm.expect(pm.response.json().data.length).to.eql(10));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2. Recherche usager B",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/reception/recherche?query={{usagerTelScenarioB}}",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));",
+                  "const rdvs = pm.response.json().data;",
+                  "pm.test('3 RDV', () => pm.expect(rdvs.length).to.eql(3));",
+                  "pm.test('B1 TERMINE', () => pm.expect(rdvs.find(r => r.reference === 'RDV-2026-000002').statut).to.eql('TERMINE'));",
+                  "pm.test('B2 ARRIVE', () => pm.expect(rdvs.find(r => r.reference === 'RDV-2026-000003').statut).to.eql('ARRIVE'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3. Visite active usager B",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/reception/visites/active?query={{usagerTelScenarioB}}",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));",
+                  "pm.test('visite EN_COURS', () => pm.expect(pm.response.json().data.statut).to.eql('EN_COURS'));",
+                  "pm.test('3 RDV liés', () => pm.expect(pm.response.json().data.rendezVous.length).to.eql(3));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "4. Notifications réception",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/reception/notifications",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));",
+                  "const items = pm.response.json().data || [];",
+                  "pm.test('FIN_PRISE_EN_CHARGE', () => pm.expect(items.some(n => n.type === 'FIN_PRISE_EN_CHARGE')).to.be.true);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Volume / recherche",
+      "description": "Après fixtures volume. Listes et recherche.",
+      "item": [
+        {
+          "name": "Recherche volume",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/reception/recherche?query=089",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "RDV du jour",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/reception/rendez-vous-du-jour",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const json = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(json.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
