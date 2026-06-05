@@ -21,16 +21,14 @@ export function ProchaineActionBanner({
       aria-live="polite"
     >
       <p className="text-xs font-semibold uppercase tracking-wide text-institution">
-        Prochaine action — réception
+        Action suivante
       </p>
       <p className="mt-1 text-base font-semibold text-anthracite">{action.title}</p>
       {action.detail && (
         <p className="mt-1 text-sm text-anthracite-muted">{action.detail}</p>
       )}
       {selectedRdv && (
-        <p className="mt-2 font-mono text-xs text-anthracite-muted">
-          {selectedRdv.reference} — {selectedRdv.statut}
-        </p>
+        <p className="mt-2 font-mono text-xs text-anthracite-muted">{selectedRdv.reference}</p>
       )}
     </div>
   );

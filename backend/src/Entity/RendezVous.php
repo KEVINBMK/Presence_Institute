@@ -40,6 +40,10 @@ class RendezVous
     #[ORM\Column(type: 'text')]
     private string $motif;
 
+    /** Fonction ou rôle souhaité par l’usager (texte libre, sans nom du personnel). */
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $fonctionSouhaitee = null;
+
     #[ORM\Column(type: 'string', enumType: StatutRendezVous::class)]
     private StatutRendezVous $statut = StatutRendezVous::DEMANDE;
 
@@ -138,6 +142,20 @@ class RendezVous
     public function setMotif(string $motif): static
     {
         $this->motif = $motif;
+
+        return $this;
+    }
+
+    public function getFonctionSouhaitee(): ?string
+    {
+        return $this->fonctionSouhaitee;
+    }
+
+    public function setFonctionSouhaitee(?string $fonctionSouhaitee): static
+    {
+        $this->fonctionSouhaitee = $fonctionSouhaitee !== null && trim($fonctionSouhaitee) !== ''
+            ? trim($fonctionSouhaitee)
+            : null;
 
         return $this;
     }

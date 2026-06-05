@@ -33,6 +33,17 @@ class ReceptionController extends AbstractApiController
         return $this->jsonOk($this->rendezVousList($this->receptionService->getRendezVousDuJour()));
     }
 
+    #[Route('/rendez-vous-a-venir', name: 'api_reception_rdv_a_venir', methods: ['GET'])]
+    public function rendezVousAVenir(Request $request): JsonResponse
+    {
+        $jours = (int) $request->query->get('jours', 14);
+        if ($jours < 1 || $jours > 90) {
+            $jours = 14;
+        }
+
+        return $this->jsonOk($this->rendezVousList($this->receptionService->getRendezVousAVenir($jours)));
+    }
+
     #[Route('/recherche', name: 'api_reception_recherche', methods: ['GET'])]
     public function recherche(Request $request): JsonResponse
     {

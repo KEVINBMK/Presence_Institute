@@ -33,6 +33,10 @@ class CreateRendezVousDto
     #[Assert\NotBlank]
     public string $motif = '';
 
+    /** Fonction ou rôle recherché (texte libre, sans nom du personnel). */
+    #[Assert\Length(max: 255)]
+    public ?string $fonctionSouhaitee = null;
+
     #[Assert\Choice(choices: [
         'CITOYEN',
         'AGENT_PUBLIC',

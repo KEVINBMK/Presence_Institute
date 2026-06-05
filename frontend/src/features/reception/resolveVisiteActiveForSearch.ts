@@ -20,7 +20,7 @@ export async function resolveVisiteActiveForSearch(
     return direct;
   }
 
-  const phone = results[0]?.usager.telephone?.trim();
+  const phone = results[0]?.usager?.telephone?.trim();
   if (phone && phone !== trimmed) {
     return fetchVisiteActive(phone);
   }

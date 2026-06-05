@@ -1,6 +1,8 @@
-import { apiPost } from './client';
 import type { PeriodeSouhaitee } from '../components/usager/PreferencePeriodePicker';
 import type { RendezVous, TypeUsager } from '../types/api';
+import type { HttpClient } from './http/HttpClient';
+import { fetchHttpClient } from './http/FetchHttpClient';
+import { API_ROUTES } from './routes';
 
 export interface CreateRendezVousPayload {
   nom: string;
@@ -12,10 +14,10 @@ export interface CreateRendezVousPayload {
   dateSouhaitee: string;
   periodeSouhaitee?: PeriodeSouhaitee;
   motif: string;
+  fonctionSouhaitee?: string | null;
 }
 
-/** Demande usager — le serveur attribue le créneau (pas de heureDebut côté client). */
-export function createRendezVous(payload: CreateRendezVousPayload): Promise<RendezVous> {
+function buildCreateBody(payload: CreateRendezVousPayload): Record<string, unknown> {
   const body: Record<string, unknown> = {
     nom: payload.nom.trim(),
     prenom: payload.prenom.trim(),
@@ -35,5 +37,24 @@ export function createRendezVous(payload: CreateRendezVousPayload): Promise<Rend
     body.periodeSouhaitee = payload.periodeSouhaitee;
   }
 
-  return apiPost<RendezVous>('/api/rendez-vous', body);
+  const fonction = payload.fonctionSouhaitee?.trim();
+  if (fonction) {
+    body.fonctionSouhaitee = fonction;
+  }
+
+  return body;
 }
+
+export function createRendezVousApi(client: HttpClient) {
+  return {
+    /** Demande usager — le serveur attribue le créneau (pas de heureDebut côté client). */
+    create(payload: CreateRendezVousPayload): Promise<RendezVous> {
+      return client.post<RendezVous>(API_ROUTES.rendezVous.create, buildCreateBody(payload));
+    },
+  };
+}
+
+export const rendezVousApi = createRendezVousApi(fetchHttpClient);
+
+export const createRendezVous = (payload: CreateRendezVousPayload) =>
+  rendezVousApi.create(payload);

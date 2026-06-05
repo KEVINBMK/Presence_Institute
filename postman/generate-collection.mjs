@@ -22,6 +22,20 @@ const SAVE_RDV = [
   'if (json.data?.bureau?.id) pm.collectionVariables.set("bureauId", String(json.data.bureau.id));',
 ];
 
+const SAVE_RDV_USAGER = [
+  'const json = pm.response.json();',
+  'if (json.data?.id) pm.collectionVariables.set("rdvId", String(json.data.id));',
+  'if (json.data?.reference) pm.collectionVariables.set("reference", json.data.reference);',
+  'if (json.data?.bureau?.id) pm.collectionVariables.set("bureauId", String(json.data.bureau.id));',
+];
+
+const TEST_NO_PERSONNEL_USAGER = [
+  "pm.test('réponse usager sans personnel nominatif', () => {",
+  '  pm.expect(json.data.personnel).to.be.undefined;',
+  "  pm.expect(json.data).to.not.have.property('personnel');",
+  '});',
+];
+
 const INIT_VARS = [
   "const today = new Date().toISOString().split('T')[0];",
   "pm.collectionVariables.set('today', today);",
@@ -136,7 +150,7 @@ const reference = folder('Référence', 'Requêtes isolées pour tester une rout
 
 const soumission = folder(
   'Soumission demande usager',
-  'POST demande — planification auto (CONFIRME ou DEMANDE). Sans heureDebut côté client.',
+  'POST demande — planification auto (CONFIRME ou DEMANDE). Sans heureDebut ni personnel nominatif côté usager.',
   [
     req('1. Initialiser date et téléphone', 'GET', `${base}/api/bureaux`, {
       description: 'Ping + variables today / uniquePhone / bureauId',
@@ -152,13 +166,17 @@ const soumission = folder(
   "bureauId": {{bureauId}},
   "dateSouhaitee": "{{today}}",
   "periodeSouhaitee": "MATIN",
+  "fonctionSouhaitee": "Technicien",
   "motif": "Soumission demande — test planification"
 }`,
       events: both(ENSURE_BUREAU, [
-        ...TEST_OK,
-        ...SAVE_RDV,
-        "const j = pm.response.json();",
-        "pm.test('statut CONFIRME ou DEMANDE', () => pm.expect(['CONFIRME','DEMANDE']).to.include(j.data.statut));",
+        "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+        'const json = pm.response.json();',
+        "pm.test('success = true', () => pm.expect(json.success).to.eql(true));",
+        ...SAVE_RDV_USAGER.slice(1),
+        ...TEST_NO_PERSONNEL_USAGER,
+        "pm.test('fonctionSouhaitee renvoyée', () => pm.expect(json.data.fonctionSouhaitee).to.eql('Technicien'));",
+        "pm.test('statut CONFIRME ou DEMANDE', () => pm.expect(['CONFIRME','DEMANDE']).to.include(json.data.statut));",
       ]),
     }),
   ],

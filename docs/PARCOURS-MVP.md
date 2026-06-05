@@ -125,6 +125,12 @@ Les espaces **Usager**, **Réception** et **Personnel** sont regroupés dans la 
 
 Le **choix du personnel** dans l’interface simule l’utilisateur connecté dans le cadre du MVP (10 agents de démonstration).
 
+### Confidentialité — pas de choix nominatif du personnel
+
+Pour protéger les informations internes, l’usager ne choisit pas nominativement un personnel. Il indique le bureau concerné et éventuellement une **fonction souhaitée** (ex. assistant du bureau, technicien). La réception conserve la maîtrise de l’orientation.
+
+L’API usager (`POST /api/rendez-vous`, consultation par référence) ne expose pas les noms du personnel interne.
+
 ---
 
 ## Scénario de démo conseillé (5 min)

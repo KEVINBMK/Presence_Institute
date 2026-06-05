@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { AppointmentTable } from '../../components/appointments/AppointmentTable';
 import { HistoriqueList } from '../../components/historique/HistoriqueList';
 import { NotificationPanel } from '../../components/notifications/NotificationPanel';
@@ -6,14 +7,18 @@ import { ReceptionVisitPanel } from '../../components/reception/ReceptionVisitPa
 import { RemainingRendezVousList } from '../../components/reception/RemainingRendezVousList';
 import { SearchBar } from '../../components/ui/SearchBar';
 import { SectionCard } from '../../components/ui/SectionCard';
+import type { QuickActionId } from '../../utils/receptionQuickActions';
+import { renderReceptionBubble } from './renderReceptionBubble';
 import { useReceptionPage } from './useReceptionPage';
 
 export function ReceptionPage() {
   const {
     rdvList,
+    rdvAVenir,
     listLoading,
     listError,
     searchMode,
+    isRdvDuJour,
     notifications,
     notifLoading,
     query,
@@ -33,30 +38,102 @@ export function ReceptionPage() {
     handleDecision,
     handleCloturerVisite,
     selectRdv,
+    clearSelection,
+    scrollToHistorique,
   } = useReceptionPage();
+
+  const scrollToMessages = useCallback(() => {
+    document.getElementById('reception-messages')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, []);
+
+  const handleQuickAction = useCallback(
+    (actionId: QuickActionId) => {
+      switch (actionId) {
+        case 'enregistrer_arrivee':
+          handleArrivee();
+          break;
+        case 'ouvrir_visite':
+          handleOuvrirVisite();
+          break;
+        case 'orienter':
+          handleOrienter();
+          break;
+        case 'attendre':
+          handleDecision('ATTENDRE');
+          break;
+        case 'cloturer':
+          handleCloturerVisite();
+          break;
+        case 'reporter':
+          handleDecision('REPORTER');
+          break;
+        case 'reorienter':
+          handleDecision('REORIENTER');
+          break;
+        case 'voir_message':
+          scrollToMessages();
+          break;
+        case 'voir_demande':
+        case 'voir_detail':
+        case 'marquer_a_traiter':
+        case 'attendre_personnel':
+        case 'decider_suite':
+          if (visiteActive) {
+            scrollToHistorique();
+          }
+          break;
+        default:
+          break;
+      }
+    },
+    [
+      handleArrivee,
+      handleOuvrirVisite,
+      handleOrienter,
+      handleDecision,
+      handleCloturerVisite,
+      scrollToMessages,
+      scrollToHistorique,
+      visiteActive,
+    ],
+  );
+
+  const bubbleCtx = {
+    selectedRdv,
+    visiteActive,
+    isRdvDuJour,
+    pendingNotifsCount: pendingNotifs.length,
+    actionLoading,
+    actionError,
+    onQuickAction: handleQuickAction,
+    onClose: clearSelection,
+    onVoirHistorique: scrollToHistorique,
+  };
+
+  const renderBubble = (rdv: Parameters<typeof renderReceptionBubble>[0]) =>
+    renderReceptionBubble(rdv, bubbleCtx);
 
   return (
     <div className="space-y-6">
       <header>
         <h1 className="font-serif text-2xl text-institution md:text-3xl">
-          Tableau de contrôle de la réception
+          Accueil — réception
         </h1>
         <p className="mt-2 text-sm text-anthracite-muted md:text-base">
-          Recherche, suivi des rendez-vous du jour, notifications et décisions. La réception pilote
-          chaque étape — l&apos;usager ne circule pas seul.
-        </p>
-        <p className="mt-2 text-xs text-anthracite-muted">
-          Mode démonstration MVP : les trois espaces sont accessibles sans authentification.
+          Cliquez sur un rendez-vous pour agir directement depuis la file. La réception pilote
+          chaque étape.
         </p>
       </header>
 
-      <ProchaineActionBanner
-        selectedRdv={selectedRdv}
-        visiteActive={visiteActive}
-        hasPendingNotifications={pendingNotifs.length > 0}
-      />
+      {selectedRdv && (
+        <ProchaineActionBanner
+          selectedRdv={selectedRdv}
+          visiteActive={visiteActive}
+          hasPendingNotifications={pendingNotifs.length > 0}
+        />
+      )}
 
-      <SectionCard title="Recherche" accent>
+      <SectionCard title="Rechercher un usager" accent>
         <SearchBar
           value={query}
           onChange={setQuery}
@@ -76,25 +153,31 @@ export function ReceptionPage() {
       <div className="grid gap-6 xl:grid-cols-12">
         <div className="space-y-6 xl:col-span-3 xl:order-1">
           <SectionCard
-            title="Notifications"
+            title="Messages reçus"
             subtitle={
               notifLoading
                 ? 'Chargement…'
                 : `${pendingNotifs.length} en attente`
             }
           >
-            {notifLoading ? (
-              <p className="text-sm text-anthracite-muted">Chargement…</p>
-            ) : (
-              <NotificationPanel items={pendingNotifs.length ? pendingNotifs : notifications} />
-            )}
+            <div id="reception-messages">
+              {notifLoading ? (
+                <p className="text-sm text-anthracite-muted">Chargement…</p>
+              ) : (
+                <NotificationPanel items={pendingNotifs.length ? pendingNotifs : notifications} />
+              )}
+            </div>
           </SectionCard>
-          <SectionCard title="Historique récent">
-            {visiteActive ? (
-              <HistoriqueList items={historique} />
-            ) : (
-              <p className="text-sm text-anthracite-muted">Ouvrez une visite pour afficher l&apos;historique.</p>
-            )}
+          <SectionCard title="Historique">
+            <div id="reception-historique">
+              {visiteActive ? (
+                <HistoriqueList items={historique} />
+              ) : (
+                <p className="text-sm text-anthracite-muted">
+                  Ouvrez une visite pour consulter l&apos;historique.
+                </p>
+              )}
+            </div>
           </SectionCard>
         </div>
 
@@ -113,51 +196,50 @@ export function ReceptionPage() {
               <p className="text-sm text-anthracite-muted">Aucun rendez-vous pour cette vue.</p>
             )}
             {!listLoading && rdvList.length > 0 && (
-              <>
-                <AppointmentTable
-                  items={rdvList}
-                  selectedId={selectedRdv?.id}
-                  onSelect={selectRdv}
-                />
-                {selectedRdv && (
-                  <div className="mt-4 flex flex-wrap gap-2 border-t border-border pt-4">
-                    {selectedRdv.statut === 'CONFIRME' && (
-                      <button
-                        type="button"
-                        disabled={actionLoading}
-                        onClick={handleArrivee}
-                        className="min-h-11 rounded-[6px] border border-institution bg-institution px-4 text-sm font-semibold text-ivory disabled:opacity-50"
-                      >
-                        Enregistrer l&apos;arrivée
-                      </button>
-                    )}
-                    {selectedRdv.statut === 'ARRIVE' && (
-                      <button
-                        type="button"
-                        disabled={actionLoading}
-                        onClick={handleOuvrirVisite}
-                        className="min-h-11 rounded-[6px] border border-copper bg-copper/10 px-4 text-sm font-semibold disabled:opacity-50"
-                      >
-                        Ouvrir la visite
-                      </button>
-                    )}
-                    <span className="self-center text-xs text-anthracite-muted">
-                      {selectedRdv.reference} — {selectedRdv.statut}
-                    </span>
-                  </div>
-                )}
-              </>
+              <AppointmentTable
+                items={rdvList}
+                selectedId={selectedRdv?.id}
+                onSelect={selectRdv}
+                showInternalDetails
+                showDate={searchMode}
+                renderInlineDetails={renderBubble}
+              />
             )}
             {searching && (
               <p className="mt-2 text-sm text-anthracite-muted">Recherche en cours…</p>
             )}
           </SectionCard>
 
-          <SectionCard title="Visite active" accent>
+          {!searchMode && (
+            <SectionCard
+              title="Rendez-vous à venir"
+              subtitle={`${rdvAVenir.length} sur les 14 prochains jours`}
+            >
+              {listLoading && <p className="text-sm text-anthracite-muted">Chargement…</p>}
+              {!listLoading && rdvAVenir.length === 0 && (
+                <p className="text-sm text-anthracite-muted">
+                  Aucun rendez-vous planifié pour les prochains jours.
+                </p>
+              )}
+              {!listLoading && rdvAVenir.length > 0 && (
+                <AppointmentTable
+                  items={rdvAVenir}
+                  selectedId={selectedRdv?.id}
+                  onSelect={selectRdv}
+                  showInternalDetails
+                  showDate
+                  renderInlineDetails={renderBubble}
+                />
+              )}
+            </SectionCard>
+          )}
+
+          <SectionCard title="Visite en cours" accent>
             <ReceptionVisitPanel
               visiteActive={visiteActive}
               actionLoading={actionLoading}
               actionError={actionError}
+              compact
               onOrienter={handleOrienter}
               onAttendre={() => handleDecision('ATTENDRE')}
               onCloturer={handleCloturerVisite}
@@ -167,23 +249,18 @@ export function ReceptionPage() {
           </SectionCard>
 
           {visiteActive && visiteActive.rendezVous.length > 0 && (
-            <SectionCard title="Rendez-vous restants" accent>
-              <p className="mb-4 text-sm text-anthracite-muted">
-                L&apos;usager peut avoir plusieurs rendez-vous le même jour, y compris dans le même
-                bureau avec des personnels différents. La réception décide de la suite — pas de passage
-                automatique.
-              </p>
+            <SectionCard title="Autres rendez-vous du jour" accent>
               <RemainingRendezVousList items={visiteActive.rendezVous} />
             </SectionCard>
           )}
         </div>
 
         <div className="hidden xl:col-span-3 xl:order-3 xl:block">
-          <SectionCard title="Aide décision">
+          <SectionCard title="Rappels">
             <ul className="space-y-3 text-sm text-anthracite-muted">
-              <li>La réception oriente et décide — l&apos;usager ne circule pas seul.</li>
-              <li>Le personnel notifie en fin de prise en charge.</li>
-              <li>Pas de clôture automatique sans action explicite.</li>
+              <li>Cliquez sur un rendez-vous pour voir les actions.</li>
+              <li>La réception oriente et décide.</li>
+              <li>L&apos;usager ne circule pas seul dans le bâtiment.</li>
             </ul>
           </SectionCard>
         </div>

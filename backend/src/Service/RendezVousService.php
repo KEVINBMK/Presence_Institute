@@ -72,12 +72,22 @@ class RendezVousService
                 ? PeriodeSouhaitee::from($dto->periodeSouhaitee)
                 : null;
 
-            $attribution = $this->creneauService->attribuerPremierCreneauDisponible($bureau, $date, $periode);
+            $fonctionSouhaitee = $dto->fonctionSouhaitee !== null && trim($dto->fonctionSouhaitee) !== ''
+                ? trim($dto->fonctionSouhaitee)
+                : null;
+
+            $attribution = $this->creneauService->attribuerPremierCreneauDisponible(
+                $bureau,
+                $date,
+                $periode,
+                $fonctionSouhaitee,
+            );
 
             $rdv = new RendezVous();
             $rdv->setReference(ReferenceGenerator::rendezVous());
             $rdv->setDateRendezVous($date);
             $rdv->setMotif($dto->motif);
+            $rdv->setFonctionSouhaitee($fonctionSouhaitee);
             $rdv->setUsager($usager);
             $rdv->setBureau($bureau);
 

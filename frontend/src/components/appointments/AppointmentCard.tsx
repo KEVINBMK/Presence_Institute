@@ -1,15 +1,27 @@
 import { STATUT_RDV_LABELS, statutRdvTone } from '../../constants/status';
 import type { RendezVous } from '../../types/api';
-import { fullName } from '../../utils/format';
+import { formatDateFr, fullName } from '../../utils/format';
+import { messageFonctionNonDisponible } from '../../utils/rendezVousDisplay';
 import { StatusBadge } from '../ui/StatusBadge';
 
 interface AppointmentCardProps {
   rdv: RendezVous;
   onSelect?: () => void;
   selected?: boolean;
+  /** Réception / personnel : affiche personnel assigné et alertes internes. */
+  showInternalDetails?: boolean;
+  showDate?: boolean;
 }
 
-export function AppointmentCard({ rdv, onSelect, selected }: AppointmentCardProps) {
+export function AppointmentCard({
+  rdv,
+  onSelect,
+  selected,
+  showInternalDetails = false,
+  showDate = false,
+}: AppointmentCardProps) {
+  const alerteFonction = showInternalDetails ? messageFonctionNonDisponible(rdv) : null;
+
   return (
     <article
       role={onSelect ? 'button' : undefined}
@@ -25,18 +37,39 @@ export function AppointmentCard({ rdv, onSelect, selected }: AppointmentCardProp
         <StatusBadge label={STATUT_RDV_LABELS[rdv.statut]} tone={statutRdvTone(rdv.statut)} />
       </div>
       <p className="font-serif text-base text-anthracite">
-        {fullName(rdv.usager.prenom, rdv.usager.nom)}
+        {rdv.usager ? fullName(rdv.usager.prenom, rdv.usager.nom) : '—'}
       </p>
       <p className="mt-1 text-sm text-anthracite-muted">{rdv.bureau.nom}</p>
+      {showDate && (
+        <p className="mt-1 text-sm font-medium text-institution">{formatDateFr(rdv.dateRendezVous)}</p>
+      )}
+      {rdv.fonctionSouhaitee && (
+        <p className="mt-2 text-sm text-anthracite">
+          <span className="text-xs uppercase text-anthracite-muted">Fonction souhaitée — </span>
+          {rdv.fonctionSouhaitee}
+        </p>
+      )}
+      {alerteFonction && (
+        <p className="mt-2 rounded-[6px] border border-copper/40 bg-copper/10 px-2 py-1 text-xs font-medium text-copper">
+          {alerteFonction}
+        </p>
+      )}
       <div className="mt-3 flex flex-wrap gap-3 text-sm">
         <span>
           {rdv.heureDebut && rdv.heureFin
             ? `${rdv.heureDebut} — ${rdv.heureFin}`
-            : 'Créneau à planifier'}
+            : 'Horaire à confirmer'}
         </span>
-        <span>{rdv.usager.telephone}</span>
+        {rdv.usager && <span>{rdv.usager.telephone}</span>}
       </div>
-      <p className="mt-2 line-clamp-2 text-sm text-anthracite-muted">{rdv.motif}</p>
+      {showInternalDetails && rdv.personnel && (
+        <p className="mt-2 text-sm text-institution">
+          Personnel assigné : {fullName(rdv.personnel.prenom, rdv.personnel.nom)} — {rdv.personnel.fonction}
+        </p>
+      )}
+      {showInternalDetails && (
+        <p className="mt-2 line-clamp-2 text-sm text-anthracite-muted">{rdv.motif}</p>
+      )}
     </article>
   );
 }

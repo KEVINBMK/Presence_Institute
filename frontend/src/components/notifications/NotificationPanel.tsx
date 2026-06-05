@@ -3,9 +3,9 @@ import { formatTime } from '../../utils/format';
 
 const typeLabels: Record<TypeNotification, string> = {
   ARRIVEE_USAGER: 'Arrivée',
-  FIN_PRISE_EN_CHARGE: 'Fin prise en charge',
-  PERSONNEL_NON_DISPONIBLE: 'Indisponible',
-  DECISION_RECEPTION: 'Décision',
+  FIN_PRISE_EN_CHARGE: 'Prise en charge terminée',
+  PERSONNEL_NON_DISPONIBLE: 'Personnel indisponible',
+  DECISION_RECEPTION: 'Décision attendue',
 };
 
 interface NotificationPanelProps {
@@ -14,7 +14,7 @@ interface NotificationPanelProps {
 
 export function NotificationPanel({ items }: NotificationPanelProps) {
   if (items.length === 0) {
-    return <p className="text-sm text-anthracite-muted">Aucune notification en attente.</p>;
+    return <p className="text-sm text-anthracite-muted">Aucun message en attente.</p>;
   }
 
   return (

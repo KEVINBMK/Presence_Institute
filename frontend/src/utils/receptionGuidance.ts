@@ -7,38 +7,36 @@ export interface ProchaineAction {
 
 const RDV_GUIDANCE: Record<StatutRendezVous, ProchaineAction> = {
   DEMANDE: {
-    title: 'Demande à planifier par la réception',
-    detail:
-      'Aucun créneau n’a encore été attribué. La réception pourra traiter cette demande hors parcours automatique.',
+    title: 'Demande à traiter',
+    detail: 'Aucun horaire n’a encore été fixé.',
   },
   CONFIRME: {
-    title: 'Enregistrer l’arrivée de l’usager',
-    detail: 'L’usager est attendu. Validez son arrivée avant d’ouvrir la visite.',
+    title: 'Enregistrer l’arrivée',
+    detail: 'L’usager est attendu aujourd’hui.',
   },
   ARRIVE: {
-    title: 'Ouvrir la visite ou orienter l’usager',
-    detail: 'La visite n’est pas encore ouverte ou doit être reliée à ce rendez-vous.',
+    title: 'Ouvrir la visite',
+    detail: 'Puis orienter l’usager si besoin.',
   },
   EN_COURS: {
-    title: 'En attente de clôture par le personnel',
-    detail: 'Le personnel doit clôturer la prise en charge et notifier la réception.',
+    title: 'Attendre la fin de prise en charge',
+    detail: 'Le personnel vous préviendra.',
   },
   TERMINE: {
-    title: 'Traiter la notification et décider de la suite',
-    detail:
-      'Consultez les rendez-vous restants éventuels, puis décidez : continuer, attendre, reporter ou clôturer.',
+    title: 'Décider de la suite',
+    detail: 'Consultez le message reçu si besoin.',
   },
   REPORTE: {
-    title: 'Rendez-vous à reprogrammer',
-    detail: 'La réception gère le report hors attribution automatique d’un nouveau créneau.',
+    title: 'Rendez-vous reporté',
+    detail: 'À reprogrammer avec l’usager.',
   },
   ANNULE: {
     title: 'Rendez-vous annulé',
-    detail: 'Aucune action d’accueil requise pour ce rendez-vous.',
+    detail: 'Aucune action d’accueil requise.',
   },
   NON_PRESENTE: {
-    title: 'Aucune visite ouverte pour ce rendez-vous',
-    detail: 'Usager non présenté — pas de suite d’accueil sur ce créneau.',
+    title: 'Usager non présenté',
+    detail: 'Aucune visite à ouvrir.',
   },
 };
 
@@ -50,21 +48,27 @@ export function getProchaineAction(
   if (!selectedRdv) {
     if (visiteActive) {
       return {
-        title: 'Visite en cours — sélectionnez un rendez-vous lié',
-        detail: 'La réception pilote la suite : orientation et décision.',
+        title: 'Visite en cours',
+        detail: 'Sélectionnez un rendez-vous dans la file pour agir.',
       };
     }
     return {
-      title: 'Sélectionnez un rendez-vous dans la liste',
-      detail: 'La réception reste le centre de contrôle du parcours.',
+      title: 'Sélectionnez un rendez-vous',
+      detail: 'Cliquez sur une ligne pour voir les actions.',
     };
   }
 
   if (selectedRdv.statut === 'TERMINE' && hasPendingNotifications && visiteActive) {
     return {
-      title: 'Traiter la notification et décider de la suite',
-      detail:
-        'Une prise en charge vient d’être clôturée. Vérifiez les rendez-vous restants avant de continuer.',
+      title: 'Décider de la suite',
+      detail: 'Un message du personnel attend votre décision.',
+    };
+  }
+
+  if (selectedRdv.statut === 'ARRIVE' && visiteActive) {
+    return {
+      title: 'Orienter l’usager',
+      detail: 'La visite est ouverte.',
     };
   }
 

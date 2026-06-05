@@ -67,12 +67,28 @@ final class ApiPresenter
             'heureDebut' => $r->getHeureDebut()?->format('H:i'),
             'heureFin' => $r->getHeureFin()?->format('H:i'),
             'motif' => $r->getMotif(),
+            'fonctionSouhaitee' => $r->getFonctionSouhaitee(),
             'statut' => $r->getStatut()->value,
             'usager' => self::usager($r->getUsager()),
             'bureau' => self::bureau($r->getBureau()),
             'personnel' => $r->getPersonnel() ? self::personnel($r->getPersonnel()) : null,
             'createdAt' => $r->getCreatedAt()->format(\DateTimeInterface::ATOM),
             'updatedAt' => $r->getUpdatedAt()->format(\DateTimeInterface::ATOM),
+        ];
+    }
+
+    /** Vue usager : pas d’informations nominatives ni opérationnelles sur le personnel interne. */
+    public static function rendezVousPourUsager(RendezVous $r): array
+    {
+        return [
+            'id' => $r->getId(),
+            'reference' => $r->getReference(),
+            'dateRendezVous' => $r->getDateRendezVous()->format('Y-m-d'),
+            'heureDebut' => $r->getHeureDebut()?->format('H:i'),
+            'heureFin' => $r->getHeureFin()?->format('H:i'),
+            'statut' => $r->getStatut()->value,
+            'fonctionSouhaitee' => $r->getFonctionSouhaitee(),
+            'bureau' => self::bureau($r->getBureau()),
         ];
     }
 

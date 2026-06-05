@@ -80,7 +80,9 @@ Contrôle rapide avant la démo : `GET http://127.0.0.1:8000/api/bureaux` → HT
 
 ## Règle de planification institutionnelle
 
-Dans le MVP, **l’usager ne choisit pas librement son créneau final**. Il soumet une demande de rendez-vous en indiquant le bureau concerné, le motif et une **date souhaitée** (et éventuellement une **période** : matin / après-midi). Le système vérifie ensuite les horaires du bureau, les conflits de créneaux et la disponibilité opérationnelle du personnel afin d’attribuer un créneau valide.
+Dans le MVP, **l’usager ne choisit pas librement son créneau final** et **ne choisit pas nominativement un personnel**. Il soumet une demande en indiquant le bureau concerné, le motif, une **date souhaitée** (et éventuellement une **période** : matin / après-midi) et une **fonction souhaitée** optionnelle (ex. technicien, assistant du bureau). Le système vérifie les horaires du bureau, les conflits et la disponibilité du personnel correspondant afin d’attribuer un créneau. Les noms du personnel ne sont pas exposés dans les réponses API usager.
+
+Pour protéger les informations internes, la réception conserve la maîtrise de l’orientation.
 
 - Si un créneau est trouvé → statut **CONFIRME** (`heureDebut`, `heureFin`, `personnel` attribués par le système).
 - Sinon → statut **DEMANDE** (à traiter par la réception ; heures éventuellement nulles).

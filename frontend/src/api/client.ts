@@ -1,13 +1,11 @@
 import type { ApiError, ApiSuccess } from '../types/api';
+import { ApiClientError } from './errors';
+
+export { ApiClientError } from './errors';
 
 const baseUrl = import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000';
 
-export class ApiClientError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'ApiClientError';
-  }
-}
+export type HttpMethod = 'GET' | 'POST' | 'PATCH' | 'DELETE';
 
 async function parseJson<T>(res: Response): Promise<T> {
   let json: ApiSuccess<T> | ApiError;
@@ -26,54 +24,35 @@ async function parseJson<T>(res: Response): Promise<T> {
   return json.data;
 }
 
-export async function apiGet<T>(path: string): Promise<T> {
+async function request<T>(method: HttpMethod, path: string, body?: unknown): Promise<T> {
   try {
     const res = await fetch(`${baseUrl}${path}`, {
-      headers: { Accept: 'application/json' },
+      method,
+      headers: {
+        Accept: 'application/json',
+        ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+      },
+      body: body !== undefined ? JSON.stringify(body) : undefined,
     });
     return parseJson<T>(res);
   } catch (e) {
     if (e instanceof ApiClientError) {
       throw e;
     }
-    throw new ApiClientError('Impossible de joindre le serveur. Vérifiez que l’API est démarrée.');
+    throw new ApiClientError(
+      method === 'GET'
+        ? 'Impossible de joindre le serveur. Vérifiez que l’API est démarrée.'
+        : 'Impossible de joindre le serveur.',
+    );
   }
 }
 
-export async function apiPatch<T>(path: string, body?: unknown): Promise<T> {
-  try {
-    const res = await fetch(`${baseUrl}${path}`, {
-      method: 'PATCH',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: body ? JSON.stringify(body) : undefined,
-    });
-    return parseJson<T>(res);
-  } catch (e) {
-    if (e instanceof ApiClientError) {
-      throw e;
-    }
-    throw new ApiClientError('Impossible de joindre le serveur.');
-  }
-}
+export const apiGet = <T>(path: string): Promise<T> => request<T>('GET', path);
 
-export async function apiPost<T>(path: string, body: unknown): Promise<T> {
-  try {
-    const res = await fetch(`${baseUrl}${path}`, {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body),
-    });
-    return parseJson<T>(res);
-  } catch (e) {
-    if (e instanceof ApiClientError) {
-      throw e;
-    }
-    throw new ApiClientError('Impossible de joindre le serveur.');
-  }
-}
+export const apiPost = <T>(path: string, body?: unknown): Promise<T> =>
+  request<T>('POST', path, body);
+
+export const apiPatch = <T>(path: string, body?: unknown): Promise<T> =>
+  request<T>('PATCH', path, body);
+
+export const apiDelete = <T>(path: string): Promise<T> => request<T>('DELETE', path);

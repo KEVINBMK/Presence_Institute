@@ -7,9 +7,11 @@ import {
   type PeriodeSouhaitee,
 } from '../../components/usager/PreferencePeriodePicker';
 import { SectionCard } from '../../components/ui/SectionCard';
+import { FONCTIONS_SOUHAITEES_SUGGESTIONS } from '../../constants/fonctionsSouhaitees';
+import { STATUT_RDV_LABELS } from '../../constants/status';
 import type { Bureau, RendezVous, TypeUsager } from '../../types/api';
 import { TYPE_USAGER_OPTIONS } from '../../types/api';
-import { formatDateFr, fullName, toLocalDateString } from '../../utils/format';
+import { formatDateFr, toLocalDateString } from '../../utils/format';
 
 const inputClass =
   'mt-1 min-h-11 w-full rounded-[6px] border border-border bg-surface px-3 text-anthracite';
@@ -17,6 +19,7 @@ const inputClass =
 type ConfirmationState = {
   rdv: RendezVous;
 };
+
 
 export function UsagerPage() {
   const [bureaux, setBureaux] = useState<Bureau[]>([]);
@@ -32,6 +35,7 @@ export function UsagerPage() {
   const [email, setEmail] = useState('');
   const [typeUsager, setTypeUsager] = useState<TypeUsager>('CITOYEN');
   const [motif, setMotif] = useState('');
+  const [fonctionSouhaitee, setFonctionSouhaitee] = useState('');
 
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -70,6 +74,7 @@ export function UsagerPage() {
     setTelephone('');
     setEmail('');
     setMotif('');
+    setFonctionSouhaitee('');
     setTypeUsager('CITOYEN');
     setPeriodeSouhaitee(null);
     setDateSouhaitee(toLocalDateString());
@@ -98,6 +103,7 @@ export function UsagerPage() {
         dateSouhaitee,
         periodeSouhaitee,
         motif,
+        fonctionSouhaitee: fonctionSouhaitee.trim() || null,
       });
       setConfirmation({ rdv });
     } catch (err) {
@@ -131,34 +137,34 @@ export function UsagerPage() {
             </p>
           )}
           <p className="mt-4 font-mono text-2xl font-semibold text-institution">{rdv.reference}</p>
-          {planifie && (
-            <dl className="mt-4 space-y-2 text-sm">
+          <dl className="mt-4 space-y-2 text-sm">
+            <div>
+              <dt className="text-xs uppercase text-anthracite-muted">Statut</dt>
+              <dd>{STATUT_RDV_LABELS[rdv.statut]}</dd>
+            </div>
+            <div>
+              <dt className="text-xs uppercase text-anthracite-muted">Bureau</dt>
+              <dd>{rdv.bureau.nom}</dd>
+            </div>
+            <div>
+              <dt className="text-xs uppercase text-anthracite-muted">Date</dt>
+              <dd>{formatDateFr(rdv.dateRendezVous)}</dd>
+            </div>
+            {planifie && rdv.heureDebut && rdv.heureFin && (
               <div>
-                <dt className="text-xs uppercase text-anthracite-muted">Bureau</dt>
-                <dd>{rdv.bureau.nom}</dd>
+                <dt className="text-xs uppercase text-anthracite-muted">Créneau attribué</dt>
+                <dd>
+                  {rdv.heureDebut} — {rdv.heureFin}
+                </dd>
               </div>
+            )}
+            {rdv.fonctionSouhaitee && (
               <div>
-                <dt className="text-xs uppercase text-anthracite-muted">Date</dt>
-                <dd>{formatDateFr(rdv.dateRendezVous)}</dd>
+                <dt className="text-xs uppercase text-anthracite-muted">Fonction souhaitée</dt>
+                <dd>{rdv.fonctionSouhaitee}</dd>
               </div>
-              {rdv.heureDebut && rdv.heureFin && (
-                <div>
-                  <dt className="text-xs uppercase text-anthracite-muted">Créneau attribué</dt>
-                  <dd>
-                    {rdv.heureDebut} — {rdv.heureFin}
-                  </dd>
-                </div>
-              )}
-              {rdv.personnel && (
-                <div>
-                  <dt className="text-xs uppercase text-anthracite-muted">Personnel</dt>
-                  <dd>
-                    {fullName(rdv.personnel.prenom, rdv.personnel.nom)} — {rdv.personnel.fonction}
-                  </dd>
-                </div>
-              )}
-            </dl>
-          )}
+            )}
+          </dl>
           <button
             type="button"
             onClick={resetForm}
@@ -183,10 +189,16 @@ export function UsagerPage() {
         </p>
       </header>
 
-      <div className="rounded-[6px] border border-copper/30 bg-copper/10 px-4 py-3 text-sm text-anthracite">
-        <strong className="font-semibold">Vous ne choisissez pas l&apos;heure finale.</strong> Le
-        système attribue un créneau selon les disponibilités du bureau (horaires d&apos;ouverture,
-        conflits et personnel disponible).
+      <div className="space-y-3">
+        <div className="rounded-[6px] border border-copper/30 bg-copper/10 px-4 py-3 text-sm text-anthracite">
+          <strong className="font-semibold">Vous ne choisissez pas l&apos;heure finale.</strong> Le
+          système attribue un créneau selon les disponibilités du bureau (horaires d&apos;ouverture,
+          conflits et personnel disponible).
+        </div>
+        <div className="rounded-[6px] border border-institution/25 bg-institution/5 px-4 py-3 text-sm text-anthracite">
+          Les noms du personnel ne sont pas affichés. La réception orientera votre demande vers la
+          personne concernée.
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2 lg:gap-8">
@@ -251,6 +263,24 @@ export function UsagerPage() {
                 value={periodeSouhaitee}
                 onChange={setPeriodeSouhaitee}
               />
+              <label className="block text-sm font-medium">
+                Fonction ou personne recherchée{' '}
+                <span className="font-normal text-anthracite-muted">(optionnel)</span>
+                <input
+                  type="text"
+                  list="fonctions-souhaitees"
+                  value={fonctionSouhaitee}
+                  onChange={(e) => setFonctionSouhaitee(e.target.value)}
+                  className={inputClass}
+                  placeholder="Ex. assistant du bureau, technicien, responsable…"
+                  disabled={formDisabled}
+                />
+                <datalist id="fonctions-souhaitees">
+                  {FONCTIONS_SOUHAITEES_SUGGESTIONS.map((f) => (
+                    <option key={f} value={f} />
+                  ))}
+                </datalist>
+              </label>
             </div>
           )}
         </SectionCard>

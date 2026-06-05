@@ -1,29 +1,29 @@
 import type { DisponibilitePersonnel, StatutRendezVous, StatutVisite } from '../types/api';
 
 export const STATUT_RDV_LABELS: Record<StatutRendezVous, string> = {
-  DEMANDE: 'DEMANDE',
-  CONFIRME: 'CONFIRMÉ',
-  ARRIVE: 'ARRIVÉ',
-  EN_COURS: 'EN COURS',
-  TERMINE: 'TERMINÉ',
-  REPORTE: 'REPORTÉ',
-  ANNULE: 'ANNULÉ',
-  NON_PRESENTE: 'NON PRÉSENTÉ',
+  DEMANDE: 'Demande à traiter',
+  CONFIRME: 'Prévu',
+  ARRIVE: 'Arrivé',
+  EN_COURS: 'En cours',
+  TERMINE: 'Terminé',
+  REPORTE: 'Reporté',
+  ANNULE: 'Annulé',
+  NON_PRESENTE: 'Non présenté',
 };
 
 export const STATUT_VISITE_LABELS: Record<StatutVisite, string> = {
-  OUVERTE: 'OUVERTE',
-  EN_ATTENTE: 'EN ATTENTE',
-  ORIENTEE: 'ORIENTÉE',
-  EN_COURS: 'EN COURS',
-  TERMINEE: 'CLÔTURÉE',
-  SUSPENDUE: 'SUSPENDUE',
+  OUVERTE: 'Visite ouverte',
+  EN_ATTENTE: 'En attente',
+  ORIENTEE: 'Orientée',
+  EN_COURS: 'En cours',
+  TERMINEE: 'Clôturée',
+  SUSPENDUE: 'Suspendue',
 };
 
 export const DISPONIBILITE_LABELS: Record<DisponibilitePersonnel, string> = {
   DISPONIBLE: 'Disponible',
   OCCUPE: 'Occupé',
-  NON_DISPONIBLE_POUR_RECEPTION: 'Non disponible pour réception',
+  NON_DISPONIBLE_POUR_RECEPTION: 'Ne peut pas recevoir maintenant',
 };
 
 export type StatusTone = 'neutral' | 'success' | 'warning' | 'danger' | 'info' | 'copper';

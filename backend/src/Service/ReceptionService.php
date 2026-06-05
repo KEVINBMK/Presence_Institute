@@ -47,7 +47,16 @@ class ReceptionService
     /** @return RendezVous[] */
     public function rechercher(string $query): array
     {
-        return $this->rendezVousRepository->search($query, new \DateTimeImmutable('today'));
+        return $this->rendezVousRepository->search($query);
+    }
+
+    /** @return RendezVous[] */
+    public function getRendezVousAVenir(int $jours = 14): array
+    {
+        $today = new \DateTimeImmutable('today');
+        $until = $today->modify('+' . max(1, $jours) . ' days');
+
+        return $this->rendezVousRepository->findAVenir($today, $until);
     }
 
     public function findVisiteActiveAujourdhui(string $query): ?Visite
@@ -71,6 +80,11 @@ class ReceptionService
 
         if ($rdv->getStatut() !== StatutRendezVous::CONFIRME) {
             throw new MetierException('Seul un rendez-vous confirmé peut recevoir une arrivée.');
+        }
+
+        $today = new \DateTimeImmutable('today');
+        if ($rdv->getDateRendezVous()->format('Y-m-d') !== $today->format('Y-m-d')) {
+            throw new MetierException('L\'arrivée ne peut être enregistrée que le jour du rendez-vous.');
         }
 
         $rdv->setStatut(StatutRendezVous::ARRIVE);

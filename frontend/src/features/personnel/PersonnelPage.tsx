@@ -195,7 +195,7 @@ export function PersonnelPage() {
         {!rdvLoading && rdvList.length > 0 && (
           <>
             <div className="hidden md:block">
-              <AppointmentTable items={rdvList} />
+              <AppointmentTable items={rdvList} showInternalDetails />
             </div>
             <div className="mt-4 space-y-4">
               {rdvList.map((rdv) => (

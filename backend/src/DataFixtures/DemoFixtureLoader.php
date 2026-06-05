@@ -62,7 +62,7 @@ final class DemoFixtureLoader
         // B — 3 RDV même jour, même bureau (Génie Logiciel), personnels différents
         $usagerB = $this->usager($ctx, 'Kabongo', 'Marie', '0890000002', TypeUsager::AGENT_PUBLIC);
         $rdvB1 = $this->rdv($ctx, 2, $usagerB, $bureauGenie, $personnelMarie, $today, '10:00', '10:30', StatutRendezVous::TERMINE, 'Évolution application métier');
-        $rdvB2 = $this->rdv($ctx, 3, $usagerB, $bureauGenie, $personnelPatrick, $today, '11:00', '11:30', StatutRendezVous::ARRIVE, 'Revue des spécifications');
+        $rdvB2 = $this->rdv($ctx, 3, $usagerB, $bureauGenie, $personnelPatrick, $today, '11:00', '11:30', StatutRendezVous::ARRIVE, 'Revue des spécifications', 'Analyste logiciel');
         $rdvB3 = $this->rdv($ctx, 4, $usagerB, $bureauGenie, $personnelDavid, $today, '11:30', '12:00', StatutRendezVous::CONFIRME, 'Point projet logiciel');
         $visiteB = $this->visite($ctx, 2, $usagerB, $reception, StatutVisite::EN_COURS, DecisionReception::CONTINUER, [$rdvB1, $rdvB2, $rdvB3], $today->setTime(10, 3));
         $ctx->registerOpenVisite($visiteB, $today->format('Y-m-d'));
@@ -87,7 +87,7 @@ final class DemoFixtureLoader
         $usagerC = $this->usager($ctx, 'Ilunga', 'Paul', '0890000003', TypeUsager::PARTENAIRE_TECHNIQUE);
         $personnelAlain->setDisponibiliteOperationnelle(DisponibilitePersonnel::NON_DISPONIBLE_POUR_RECEPTION);
         $personnelAlain->setMotifNonReception('Créneau non disponible');
-        $rdvC = $this->rdv($ctx, 5, $usagerC, $bureauAdminSys, $personnelAlain, $today, '14:00', '14:30', StatutRendezVous::ARRIVE, 'Dépannage informatique');
+        $rdvC = $this->rdv($ctx, 5, $usagerC, $bureauAdminSys, $personnelAlain, $today, '14:00', '14:30', StatutRendezVous::ARRIVE, 'Dépannage informatique', 'Administrateur système');
         $visiteC = $this->visite($ctx, 3, $usagerC, $reception, StatutVisite::EN_ATTENTE, DecisionReception::ATTENDRE, [$rdvC], $today->setTime(14, 8));
         $ctx->registerOpenVisite($visiteC, $today->format('Y-m-d'));
         $events->rendezVousCree($rdvC);
@@ -181,6 +181,7 @@ final class DemoFixtureLoader
         string $fin,
         StatutRendezVous $statut,
         string $motif,
+        ?string $fonctionSouhaitee = null,
     ): RendezVous {
         $dateYmd = $date->format('Y-m-d');
         if ($personnel) {
@@ -193,6 +194,7 @@ final class DemoFixtureLoader
         $rdv->setHeureDebut(SlotRegistry::timeImmutable($debut));
         $rdv->setHeureFin(SlotRegistry::timeImmutable($fin));
         $rdv->setMotif($motif);
+        $rdv->setFonctionSouhaitee($fonctionSouhaitee);
         $rdv->setStatut($statut);
         $rdv->setUsager($usager);
         $rdv->setBureau($bureau);

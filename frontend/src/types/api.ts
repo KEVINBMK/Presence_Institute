@@ -84,10 +84,11 @@ export interface RendezVous {
   heureDebut: string | null;
   heureFin: string | null;
   motif: string;
+  fonctionSouhaitee?: string | null;
   statut: StatutRendezVous;
-  usager: Usager;
+  usager?: Usager;
   bureau: Bureau;
-  personnel: Personnel | null;
+  personnel?: Personnel | null;
   createdAt: string;
   updatedAt: string;
 }

@@ -9,6 +9,7 @@ use App\Exception\MetierException;
 use App\Repository\PersonnelRepository;
 use App\Repository\RendezVousRepository;
 use App\Support\CreneauInterval;
+use App\Support\PersonnelFonctionMatcher;
 
 class CreneauService
 {
@@ -22,9 +23,13 @@ class CreneauService
     }
 
     /** @return array<int, array{heureDebut: string, heureFin: string, disponible: bool, personnelId: ?int}> */
-    public function getCreneauxDisponibles(Bureau $bureau, \DateTimeImmutable $date): array
-    {
+    public function getCreneauxDisponibles(
+        Bureau $bureau,
+        \DateTimeImmutable $date,
+        ?string $fonctionSouhaitee = null,
+    ): array {
         $personnels = $this->personnelRepository->findDisponiblesByBureau($bureau);
+        $personnels = $this->filtrerParFonctionSouhaitee($personnels, $fonctionSouhaitee);
         $intervals = $this->rendezVousRepository->findOccupiedIntervalsByBureau($bureau, $date);
 
         $now = new \DateTimeImmutable();
@@ -85,8 +90,11 @@ class CreneauService
         Bureau $bureau,
         \DateTimeImmutable $date,
         ?PeriodeSouhaitee $periodeSouhaitee = null,
+        ?string $fonctionSouhaitee = null,
     ): ?array {
-        foreach ($this->getCreneauxDisponibles($bureau, $date) as $creneau) {
+        $fonction = $this->normaliserFonctionSouhaitee($fonctionSouhaitee);
+
+        foreach ($this->getCreneauxDisponibles($bureau, $date, $fonction) as $creneau) {
             if (!$creneau['disponible'] || $creneau['personnelId'] === null) {
                 continue;
             }
@@ -229,5 +237,34 @@ class CreneauService
             $date->format('Y-m-d') . ' ' . $time->format('H:i:s'),
             $date->getTimezone(),
         );
+    }
+
+    /**
+     * @param Personnel[] $personnels
+     *
+     * @return Personnel[]
+     */
+    private function filtrerParFonctionSouhaitee(array $personnels, ?string $fonctionSouhaitee): array
+    {
+        $fonction = $this->normaliserFonctionSouhaitee($fonctionSouhaitee);
+        if ($fonction === null) {
+            return $personnels;
+        }
+
+        return array_values(array_filter(
+            $personnels,
+            static fn (Personnel $p) => PersonnelFonctionMatcher::correspond($p->getFonction(), $fonction),
+        ));
+    }
+
+    private function normaliserFonctionSouhaitee(?string $fonctionSouhaitee): ?string
+    {
+        if ($fonctionSouhaitee === null) {
+            return null;
+        }
+
+        $trimmed = trim($fonctionSouhaitee);
+
+        return $trimmed !== '' ? $trimmed : null;
     }
 }

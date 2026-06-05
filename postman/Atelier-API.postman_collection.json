@@ -376,7 +376,7 @@
     },
     {
       "name": "Soumission demande usager",
-      "description": "POST demande — planification auto (CONFIRME ou DEMANDE). Sans heureDebut côté client.",
+      "description": "POST demande — planification auto (CONFIRME ou DEMANDE). Sans heureDebut ni personnel nominatif côté usager.",
       "item": [
         {
           "name": "1. Initialiser date et téléphone",
@@ -434,7 +434,7 @@
             "description": "",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nom\": \"Demande\",\n  \"prenom\": \"Usager\",\n  \"telephone\": \"{{uniquePhone}}\",\n  \"email\": \"demande@demo.c2i.cd\",\n  \"typeUsager\": \"CITOYEN\",\n  \"bureauId\": {{bureauId}},\n  \"dateSouhaitee\": \"{{today}}\",\n  \"periodeSouhaitee\": \"MATIN\",\n  \"motif\": \"Soumission demande — test planification\"\n}"
+              "raw": "{\n  \"nom\": \"Demande\",\n  \"prenom\": \"Usager\",\n  \"telephone\": \"{{uniquePhone}}\",\n  \"email\": \"demande@demo.c2i.cd\",\n  \"typeUsager\": \"CITOYEN\",\n  \"bureauId\": {{bureauId}},\n  \"dateSouhaitee\": \"{{today}}\",\n  \"periodeSouhaitee\": \"MATIN\",\n  \"fonctionSouhaitee\": \"Technicien\",\n  \"motif\": \"Soumission demande — test planification\"\n}"
             }
           },
           "event": [
@@ -471,17 +471,15 @@
                   "pm.test('HTTP 2xx', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
                   "const json = pm.response.json();",
                   "pm.test('success = true', () => pm.expect(json.success).to.eql(true));",
-                  "const json = pm.response.json();",
                   "if (json.data?.id) pm.collectionVariables.set(\"rdvId\", String(json.data.id));",
                   "if (json.data?.reference) pm.collectionVariables.set(\"reference\", json.data.reference);",
-                  "if (json.data?.personnel?.id) {",
-                  "  pm.collectionVariables.set(\"personnelId\", String(json.data.personnel.id));",
-                  "  pm.environment.set(\"personnelId\", String(json.data.personnel.id));",
-                  "}",
-                  "if (json.data?.usager?.id) pm.collectionVariables.set(\"usagerId\", String(json.data.usager.id));",
                   "if (json.data?.bureau?.id) pm.collectionVariables.set(\"bureauId\", String(json.data.bureau.id));",
-                  "const j = pm.response.json();",
-                  "pm.test('statut CONFIRME ou DEMANDE', () => pm.expect(['CONFIRME','DEMANDE']).to.include(j.data.statut));"
+                  "pm.test('réponse usager sans personnel nominatif', () => {",
+                  "  pm.expect(json.data.personnel).to.be.undefined;",
+                  "  pm.expect(json.data).to.not.have.property('personnel');",
+                  "});",
+                  "pm.test('fonctionSouhaitee renvoyée', () => pm.expect(json.data.fonctionSouhaitee).to.eql('Technicien'));",
+                  "pm.test('statut CONFIRME ou DEMANDE', () => pm.expect(['CONFIRME','DEMANDE']).to.include(json.data.statut));"
                 ]
               }
             }

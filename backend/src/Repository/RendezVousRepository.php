@@ -58,22 +58,45 @@ class RendezVousRepository extends ServiceEntityRepository
     }
 
     /** @return RendezVous[] */
-    public function search(string $query, \DateTimeImmutable $date): array
+    public function search(string $query): array
     {
         $q = '%' . mb_strtolower($query) . '%';
 
         return $this->createQueryBuilder('r')
             ->leftJoin('r.usager', 'u')->addSelect('u')
             ->leftJoin('r.bureau', 'b')->addSelect('b')
-            ->andWhere('r.dateRendezVous = :date')
+            ->leftJoin('r.personnel', 'p')->addSelect('p')
             ->andWhere(
                 'LOWER(r.reference) LIKE :q OR LOWER(u.nom) LIKE :q OR LOWER(u.prenom) LIKE :q OR u.telephone LIKE :tel'
             )
-            ->setParameter('date', $date)
             ->setParameter('q', $q)
             ->setParameter('tel', '%' . $query . '%')
-            ->orderBy('r.heureDebut', 'ASC')
+            ->orderBy('r.dateRendezVous', 'ASC')
+            ->addOrderBy('r.heureDebut', 'ASC')
             ->setMaxResults(50)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * Rendez-vous planifiés après aujourd'hui (réception — anticipation).
+     *
+     * @return RendezVous[]
+     */
+    public function findAVenir(\DateTimeImmutable $after, \DateTimeImmutable $until): array
+    {
+        return $this->createQueryBuilder('r')
+            ->leftJoin('r.usager', 'u')->addSelect('u')
+            ->leftJoin('r.bureau', 'b')->addSelect('b')
+            ->leftJoin('r.personnel', 'p')->addSelect('p')
+            ->andWhere('r.dateRendezVous > :after')
+            ->andWhere('r.dateRendezVous <= :until')
+            ->andWhere('r.statut IN (:statuts)')
+            ->setParameter('after', $after)
+            ->setParameter('until', $until)
+            ->setParameter('statuts', [StatutRendezVous::DEMANDE, StatutRendezVous::CONFIRME])
+            ->orderBy('r.dateRendezVous', 'ASC')
+            ->addOrderBy('r.heureDebut', 'ASC')
             ->getQuery()
             ->getResult();
     }

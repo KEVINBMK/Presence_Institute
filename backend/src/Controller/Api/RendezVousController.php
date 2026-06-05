@@ -41,7 +41,7 @@ class RendezVousController extends AbstractApiController
         return $this->handle(function () use ($dto) {
             $rdv = $this->rendezVousService->creerDemande($dto);
 
-            return $this->jsonOk(ApiPresenter::rendezVous($rdv), Response::HTTP_CREATED);
+            return $this->jsonOk(ApiPresenter::rendezVousPourUsager($rdv), Response::HTTP_CREATED);
         });
     }
 
@@ -51,7 +51,7 @@ class RendezVousController extends AbstractApiController
         return $this->handle(function () use ($reference) {
             $rdv = $this->rendezVousService->findByReference($reference);
 
-            return $this->jsonOk(ApiPresenter::rendezVous($rdv));
+            return $this->jsonOk(ApiPresenter::rendezVousPourUsager($rdv));
         });
     }
 
@@ -73,7 +73,7 @@ class RendezVousController extends AbstractApiController
             $rdv = $this->rendezVousService->annuler($id, $dto->telephone);
             $this->em->flush();
 
-            return $this->jsonOk(ApiPresenter::rendezVous($rdv));
+            return $this->jsonOk(ApiPresenter::rendezVousPourUsager($rdv));
         });
     }
 }

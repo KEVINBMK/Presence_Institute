@@ -6,6 +6,7 @@ import {
   cloturerVisite,
   decisionVisite,
   enregistrerArrivee,
+  fetchRendezVousAVenir,
   fetchRendezVousDuJour,
   fetchVisite,
   orienterVisite,
@@ -13,10 +14,12 @@ import {
   rechercheReception,
 } from '../../api/reception';
 import type { HistoriqueAction, Notification, RendezVous, Visite } from '../../types/api';
+import { toLocalDateString } from '../../utils/format';
 import { resolveVisiteActiveForSearch } from './resolveVisiteActiveForSearch';
 
 export function useReceptionPage() {
   const [rdvList, setRdvList] = useState<RendezVous[]>([]);
+  const [rdvAVenir, setRdvAVenir] = useState<RendezVous[]>([]);
   const [listLoading, setListLoading] = useState(true);
   const [listError, setListError] = useState<string | null>(null);
   const [searchMode, setSearchMode] = useState(false);
@@ -34,20 +37,27 @@ export function useReceptionPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  const loadRdvDuJour = useCallback(async () => {
+  const loadRegistre = useCallback(async () => {
     setListLoading(true);
     setListError(null);
     try {
-      const data = await fetchRendezVousDuJour();
-      setRdvList(data);
+      const [duJour, aVenir] = await Promise.all([
+        fetchRendezVousDuJour(),
+        fetchRendezVousAVenir(),
+      ]);
+      setRdvList(duJour);
+      setRdvAVenir(aVenir);
       setSearchMode(false);
     } catch (e) {
       setRdvList([]);
+      setRdvAVenir([]);
       setListError(e instanceof ApiClientError ? e.message : 'Impossible de charger les rendez-vous.');
     } finally {
       setListLoading(false);
     }
   }, []);
+
+  const loadRdvDuJour = loadRegistre;
 
   const loadNotifications = useCallback(async () => {
     setNotifLoading(true);
@@ -61,9 +71,14 @@ export function useReceptionPage() {
   }, []);
 
   useEffect(() => {
-    void loadRdvDuJour();
+    void loadRegistre();
     void loadNotifications();
-  }, [loadRdvDuJour, loadNotifications]);
+  }, [loadRegistre, loadNotifications]);
+
+  const isRdvDuJour = useCallback(
+    (rdv: RendezVous) => rdv.dateRendezVous === toLocalDateString(),
+    [],
+  );
 
   const refreshVisite = useCallback(async (visiteId: number) => {
     const v = await fetchVisite(visiteId);
@@ -107,21 +122,55 @@ export function useReceptionPage() {
     }
   }, [query, loadRdvDuJour, applyVisiteSearchResult]);
 
+  const syncSelectedAfterRefresh = useCallback(
+    (duJour: RendezVous[], aVenir: RendezVous[]) => {
+      setSelectedRdv((current) => {
+        if (!current) return null;
+        const all = [...duJour, ...aVenir];
+        return all.find((r) => r.id === current.id) ?? current;
+      });
+    },
+    [],
+  );
+
+  const refreshLists = useCallback(async () => {
+    if (searchMode && query.trim()) {
+      const results = await rechercheReception(query.trim());
+      setRdvList(results);
+      setSelectedRdv((current) => {
+        if (!current) return results[0] ?? null;
+        return results.find((r) => r.id === current.id) ?? results[0] ?? null;
+      });
+      await applyVisiteSearchResult(query.trim(), results);
+    } else {
+      const [duJour, aVenir] = await Promise.all([
+        fetchRendezVousDuJour(),
+        fetchRendezVousAVenir(),
+      ]);
+      setRdvList(duJour);
+      setRdvAVenir(aVenir);
+      syncSelectedAfterRefresh(duJour, aVenir);
+    }
+  }, [searchMode, query, applyVisiteSearchResult, syncSelectedAfterRefresh]);
+
   const runAction = useCallback(
     async (fn: () => Promise<void>) => {
       setActionLoading(true);
       setActionError(null);
       try {
         await fn();
-        await loadRdvDuJour();
+        await refreshLists();
         await loadNotifications();
+        if (visiteActive) {
+          await refreshVisite(visiteActive.id);
+        }
       } catch (e) {
         setActionError(e instanceof ApiClientError ? e.message : 'Action impossible.');
       } finally {
         setActionLoading(false);
       }
     },
-    [loadRdvDuJour, loadNotifications],
+    [refreshLists, loadNotifications, visiteActive, refreshVisite],
   );
 
   const handleArrivee = useCallback(() => {
@@ -135,6 +184,9 @@ export function useReceptionPage() {
   const handleOuvrirVisite = useCallback(() => {
     if (!selectedRdv) return;
     void runAction(async () => {
+      if (!selectedRdv.usager?.id) {
+        return;
+      }
       const visite = await ouvrirVisite({
         usagerId: selectedRdv.usager.id,
         rendezVousIds: [selectedRdv.id],
@@ -176,17 +228,28 @@ export function useReceptionPage() {
   }, [visiteActive, runAction]);
 
   const selectRdv = useCallback((r: RendezVous) => {
-    setSelectedRdv(r);
+    setSelectedRdv((current) => (current?.id === r.id ? null : r));
     setActionError(null);
+  }, []);
+
+  const clearSelection = useCallback(() => {
+    setSelectedRdv(null);
+    setActionError(null);
+  }, []);
+
+  const scrollToHistorique = useCallback(() => {
+    document.getElementById('reception-historique')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }, []);
 
   const pendingNotifs = notifications.filter((n) => !n.treatedAt);
 
   return {
     rdvList,
+    rdvAVenir,
     listLoading,
     listError,
     searchMode,
+    isRdvDuJour,
     notifications,
     notifLoading,
     query,
@@ -206,5 +269,7 @@ export function useReceptionPage() {
     handleDecision,
     handleCloturerVisite,
     selectRdv,
+    clearSelection,
+    scrollToHistorique,
   };
 }
