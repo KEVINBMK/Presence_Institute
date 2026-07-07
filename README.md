@@ -34,6 +34,8 @@ php bin/console doctrine:fixtures:load --group=demo --no-interaction
 php -S 127.0.0.1:8000 -t public
 ```
 
+> **Important — tables vides ?** Les rendez-vous du jeu DEMO sont datés du **jour où les fixtures sont chargées** (`today`). Si les fixtures ont été chargées un autre jour, l'écran Réception « Rendez-vous du jour » sera vide. **Rechargez les fixtures le jour de la démonstration** avec la commande `doctrine:fixtures:load --group=demo` ci-dessus (attention : cela purge et recrée les données).
+
 4. **Tests** — [backend/MVP-DEMO.md](backend/MVP-DEMO.md) et dossier Postman **Scénario DEMO — Données fixtures A–F**.
 
 ## Documentation
