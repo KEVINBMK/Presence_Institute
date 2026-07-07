@@ -5,8 +5,10 @@ import { NotificationPanel } from '../../components/notifications/NotificationPa
 import { ProchaineActionBanner } from '../../components/reception/ProchaineActionBanner';
 import { ReceptionVisitPanel } from '../../components/reception/ReceptionVisitPanel';
 import { RemainingRendezVousList } from '../../components/reception/RemainingRendezVousList';
+import { Button } from '../../components/ui/Button';
 import { SearchBar } from '../../components/ui/SearchBar';
 import { SectionCard } from '../../components/ui/SectionCard';
+import { SkeletonList } from '../../components/ui/Skeleton';
 import type { QuickActionId } from '../../utils/receptionQuickActions';
 import { renderReceptionBubble } from './renderReceptionBubble';
 import { useReceptionPage } from './useReceptionPage';
@@ -21,6 +23,8 @@ export function ReceptionPage() {
     isRdvDuJour,
     notifications,
     notifLoading,
+    notifError,
+    notifActionId,
     query,
     setQuery,
     searching,
@@ -30,13 +34,17 @@ export function ReceptionPage() {
     actionLoading,
     actionError,
     pendingNotifs,
+    lastRefreshAt,
     loadRdvDuJour,
+    loadNotifications,
     handleSearch,
     handleArrivee,
     handleOuvrirVisite,
     handleOrienter,
     handleDecision,
     handleCloturerVisite,
+    handleNotificationLue,
+    handleNotificationTraitee,
     selectRdv,
     clearSelection,
     scrollToHistorique,
@@ -123,6 +131,16 @@ export function ReceptionPage() {
           Cliquez sur un rendez-vous pour agir directement depuis la file. La réception pilote
           chaque étape.
         </p>
+        <p className="mt-1 text-xs text-anthracite-muted">
+          Actualisation automatique toutes les 30 secondes
+          {lastRefreshAt &&
+            ` — dernière mise à jour à ${lastRefreshAt.toLocaleTimeString('fr-FR', {
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+            })}`}
+          .
+        </p>
       </header>
 
       {selectedRdv && (
@@ -161,10 +179,24 @@ export function ReceptionPage() {
             }
           >
             <div id="reception-messages">
-              {notifLoading ? (
-                <p className="text-sm text-anthracite-muted">Chargement…</p>
-              ) : (
-                <NotificationPanel items={pendingNotifs.length ? pendingNotifs : notifications} />
+              {notifLoading && <SkeletonList rows={2} label="Chargement des messages" />}
+              {!notifLoading && notifError && (
+                <div className="space-y-2">
+                  <p className="text-sm text-danger" role="alert">
+                    {notifError}
+                  </p>
+                  <Button variant="secondary" size="sm" onClick={() => void loadNotifications()}>
+                    Réessayer
+                  </Button>
+                </div>
+              )}
+              {!notifLoading && !notifError && (
+                <NotificationPanel
+                  items={pendingNotifs.length ? pendingNotifs : notifications}
+                  actionLoadingId={notifActionId}
+                  onMarquerLue={(id) => void handleNotificationLue(id)}
+                  onMarquerTraitee={(id) => void handleNotificationTraitee(id)}
+                />
               )}
             </div>
           </SectionCard>
@@ -186,7 +218,7 @@ export function ReceptionPage() {
             title={searchMode ? 'Résultats de recherche' : 'Rendez-vous du jour'}
             subtitle={`${rdvList.length} entrée(s) — ${new Date().toLocaleDateString('fr-FR')}`}
           >
-            {listLoading && <p className="text-sm text-anthracite-muted">Chargement…</p>}
+            {listLoading && <SkeletonList rows={4} label="Chargement des rendez-vous" />}
             {listError && (
               <p className="text-sm text-danger" role="alert">
                 {listError}
@@ -215,7 +247,7 @@ export function ReceptionPage() {
               title="Rendez-vous à venir"
               subtitle={`${rdvAVenir.length} sur les 14 prochains jours`}
             >
-              {listLoading && <p className="text-sm text-anthracite-muted">Chargement…</p>}
+              {listLoading && <SkeletonList rows={3} label="Chargement des rendez-vous à venir" />}
               {!listLoading && rdvAVenir.length === 0 && (
                 <p className="text-sm text-anthracite-muted">
                   Aucun rendez-vous planifié pour les prochains jours.

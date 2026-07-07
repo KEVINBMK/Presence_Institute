@@ -93,6 +93,18 @@ export interface RendezVous {
   updatedAt: string;
 }
 
+/** Vue usager d'un rendez-vous : le backend n'expose ni l'usager ni le personnel interne. */
+export interface RendezVousUsager {
+  id: number;
+  reference: string;
+  dateRendezVous: string;
+  heureDebut: string | null;
+  heureFin: string | null;
+  statut: StatutRendezVous;
+  fonctionSouhaitee?: string | null;
+  bureau: Bureau;
+}
+
 export interface Visite {
   id: number;
   reference: string;

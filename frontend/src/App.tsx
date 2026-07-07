@@ -1,10 +1,13 @@
 import { BrowserRouter } from 'react-router-dom';
+import { ToastProvider } from './components/ui/ToastProvider';
 import { AppRoutes } from './routes/AppRoutes';
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <AppRoutes />
-    </BrowserRouter>
+    <ToastProvider>
+      <BrowserRouter>
+        <AppRoutes />
+      </BrowserRouter>
+    </ToastProvider>
   );
 }

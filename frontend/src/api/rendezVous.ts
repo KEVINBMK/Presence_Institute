@@ -1,5 +1,5 @@
 import type { PeriodeSouhaitee } from '../components/usager/PreferencePeriodePicker';
-import type { RendezVous, TypeUsager } from '../types/api';
+import type { RendezVous, RendezVousUsager, TypeUsager } from '../types/api';
 import type { HttpClient } from './http/HttpClient';
 import { fetchHttpClient } from './http/FetchHttpClient';
 import { API_ROUTES } from './routes';
@@ -51,6 +51,13 @@ export function createRendezVousApi(client: HttpClient) {
     create(payload: CreateRendezVousPayload): Promise<RendezVous> {
       return client.post<RendezVous>(API_ROUTES.rendezVous.create, buildCreateBody(payload));
     },
+
+    /** Suivi usager par référence (vue publique, sans données internes). */
+    byReference(reference: string): Promise<RendezVousUsager> {
+      return client.get<RendezVousUsager>(
+        API_ROUTES.rendezVous.byReference(reference.trim().toUpperCase()),
+      );
+    },
   };
 }
 
@@ -58,3 +65,6 @@ export const rendezVousApi = createRendezVousApi(fetchHttpClient);
 
 export const createRendezVous = (payload: CreateRendezVousPayload) =>
   rendezVousApi.create(payload);
+
+export const fetchRendezVousByReference = (reference: string) =>
+  rendezVousApi.byReference(reference);

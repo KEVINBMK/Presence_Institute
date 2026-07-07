@@ -6,6 +6,14 @@ interface HistoriqueListProps {
 }
 
 export function HistoriqueList({ items }: HistoriqueListProps) {
+  if (items.length === 0) {
+    return (
+      <p className="text-sm text-anthracite-muted">
+        Aucune action enregistrée pour cette visite pour le moment.
+      </p>
+    );
+  }
+
   return (
     <ol className="relative border-l border-border pl-4">
       {items.map((h) => (

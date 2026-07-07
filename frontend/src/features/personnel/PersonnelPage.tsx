@@ -13,7 +13,9 @@ import { AppointmentCard } from '../../components/appointments/AppointmentCard';
 import { AppointmentTable } from '../../components/appointments/AppointmentTable';
 import { PersonnelSelector } from '../../components/personnel/PersonnelSelector';
 import { AvailabilityBadge } from '../../components/ui/AvailabilityBadge';
+import { Button } from '../../components/ui/Button';
 import { SectionCard } from '../../components/ui/SectionCard';
+import { SkeletonList } from '../../components/ui/Skeleton';
 import type { Personnel, RendezVous } from '../../types/api';
 import { fullName } from '../../utils/format';
 
@@ -28,6 +30,7 @@ export function PersonnelPage() {
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [selectedRdvId, setSelectedRdvId] = useState<number | null>(null);
 
   useEffect(() => {
     void (async () => {
@@ -81,6 +84,7 @@ export function PersonnelPage() {
 
   const handleSelectPersonnel = (id: number) => {
     setSelectedId(id);
+    setSelectedRdvId(null);
     setActionError(null);
   };
 
@@ -185,7 +189,7 @@ export function PersonnelPage() {
       )}
 
       <SectionCard title="Rendez-vous assignés aujourd&apos;hui">
-        {rdvLoading && <p className="text-sm text-anthracite-muted">Chargement…</p>}
+        {rdvLoading && <SkeletonList rows={3} label="Chargement des rendez-vous" />}
         {!rdvLoading && !selectedId && (
           <p className="text-sm text-anthracite-muted">Choisissez un personnel ci-dessus.</p>
         )}
@@ -194,10 +198,39 @@ export function PersonnelPage() {
         )}
         {!rdvLoading && rdvList.length > 0 && (
           <>
-            <div className="hidden md:block">
-              <AppointmentTable items={rdvList} showInternalDetails />
+            {/* Desktop : tableau sélectionnable, les actions s'affichent sous la ligne cliquée. */}
+            <div className="hidden lg:block">
+              <p className="mb-2 text-xs text-anthracite-muted">
+                Cliquez sur une ligne pour afficher les actions.
+              </p>
+              <AppointmentTable
+                items={rdvList}
+                showInternalDetails
+                selectedId={selectedRdvId ?? undefined}
+                onSelect={(rdv) =>
+                  setSelectedRdvId((current) => (current === rdv.id ? null : rdv.id))
+                }
+                renderInlineDetails={(rdv) => (
+                  <RdvActions
+                    rdv={rdv}
+                    loading={actionLoading === rdv.id}
+                    canDemarrer={canDemarrer(rdv.statut)}
+                    onDemarrer={() =>
+                      void runRdvAction(rdv.id, () => demarrerPriseEnCharge(selectedId!, rdv.id), '')
+                    }
+                    onCloturer={() =>
+                      void runRdvAction(
+                        rdv.id,
+                        () => cloturerPriseEnCharge(selectedId!, rdv.id),
+                        'Prise en charge clôturée. Réception notifiée.',
+                      )
+                    }
+                  />
+                )}
+              />
             </div>
-            <div className="mt-4 space-y-4">
+            {/* Mobile / tablette : cartes avec actions directes. */}
+            <div className="space-y-4 lg:hidden">
               {rdvList.map((rdv) => (
                 <RdvRow
                   key={rdv.id}
@@ -239,46 +272,41 @@ export function PersonnelPage() {
   );
 }
 
-function RdvRow({
-  rdv,
-  loading,
-  canDemarrer,
-  onDemarrer,
-  onCloturer,
-}: {
+interface RdvActionsProps {
   rdv: RendezVous;
   loading: boolean;
   canDemarrer: boolean;
   onDemarrer: () => void;
   onCloturer: () => void;
-}) {
-  const termine = rdv.statut === 'TERMINE';
+}
+
+/** Boutons de prise en charge, partagés entre le tableau desktop et les cartes mobiles. */
+function RdvActions({ rdv, loading, canDemarrer, onDemarrer, onCloturer }: RdvActionsProps) {
+  if (rdv.statut === 'TERMINE') {
+    return (
+      <p className="text-sm font-medium text-institution">
+        Prise en charge clôturée — réception notifiée.
+      </p>
+    );
+  }
 
   return (
+    <div className="flex flex-wrap gap-2">
+      <Button disabled={loading || !canDemarrer} onClick={onDemarrer}>
+        Démarrer la prise en charge
+      </Button>
+      <Button variant="accent" disabled={loading || rdv.statut !== 'EN_COURS'} onClick={onCloturer}>
+        Clôturer et notifier la réception
+      </Button>
+    </div>
+  );
+}
+
+function RdvRow(props: RdvActionsProps) {
+  return (
     <div className="space-y-3 rounded-[6px] border border-border bg-ivory/40 p-4">
-      <AppointmentCard rdv={rdv} />
-      {termine ? (
-        <p className="text-sm font-medium text-institution">Prise en charge clôturée — réception notifiée.</p>
-      ) : (
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            disabled={loading || !canDemarrer}
-            onClick={onDemarrer}
-            className="min-h-11 rounded-[6px] border border-institution bg-institution px-4 text-sm font-semibold text-ivory disabled:opacity-50"
-          >
-            Démarrer la prise en charge
-          </button>
-          <button
-            type="button"
-            disabled={loading || rdv.statut !== 'EN_COURS'}
-            onClick={onCloturer}
-            className="min-h-11 rounded-[6px] border border-copper bg-copper/10 px-4 text-sm font-semibold disabled:opacity-50"
-          >
-            Clôturer et notifier la réception
-          </button>
-        </div>
-      )}
+      <AppointmentCard rdv={props.rdv} />
+      <RdvActions {...props} />
     </div>
   );
 }
