@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { fetchBureaux } from '../../api/bureaux';
 import { ApiClientError } from '../../api/client';
 import { createRendezVous } from '../../api/rendezVous';
@@ -7,11 +8,13 @@ import {
   type PeriodeSouhaitee,
 } from '../../components/usager/PreferencePeriodePicker';
 import { SectionCard } from '../../components/ui/SectionCard';
+import { useToast } from '../../components/ui/ToastProvider';
 import { FONCTIONS_SOUHAITEES_SUGGESTIONS } from '../../constants/fonctionsSouhaitees';
 import { STATUT_RDV_LABELS } from '../../constants/status';
 import type { Bureau, RendezVous, TypeUsager } from '../../types/api';
 import { TYPE_USAGER_OPTIONS } from '../../types/api';
 import { formatDateFr, toLocalDateString } from '../../utils/format';
+import { validateTelephone } from '../../utils/validation';
 
 const inputClass =
   'mt-1 min-h-11 w-full rounded-[6px] border border-border bg-surface px-3 text-anthracite';
@@ -22,6 +25,7 @@ type ConfirmationState = {
 
 
 export function UsagerPage() {
+  const { showToast } = useToast();
   const [bureaux, setBureaux] = useState<Bureau[]>([]);
   const [bureauxLoading, setBureauxLoading] = useState(true);
   const [bureauxError, setBureauxError] = useState<string | null>(null);
@@ -32,6 +36,7 @@ export function UsagerPage() {
   const [nom, setNom] = useState('');
   const [prenom, setPrenom] = useState('');
   const [telephone, setTelephone] = useState('');
+  const [telephoneError, setTelephoneError] = useState<string | null>(null);
   const [email, setEmail] = useState('');
   const [typeUsager, setTypeUsager] = useState<TypeUsager>('CITOYEN');
   const [motif, setMotif] = useState('');
@@ -72,6 +77,7 @@ export function UsagerPage() {
     setNom('');
     setPrenom('');
     setTelephone('');
+    setTelephoneError(null);
     setEmail('');
     setMotif('');
     setFonctionSouhaitee('');
@@ -86,6 +92,13 @@ export function UsagerPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (bureauId === '' || submitting) {
+      return;
+    }
+
+    // Le formulaire n'est pas envoyé si le numéro est invalide.
+    const phoneError = validateTelephone(telephone);
+    setTelephoneError(phoneError);
+    if (phoneError) {
       return;
     }
 
@@ -115,6 +128,15 @@ export function UsagerPage() {
     }
   };
 
+  const copierReference = async (reference: string) => {
+    try {
+      await navigator.clipboard.writeText(reference);
+      showToast('Référence copiée.', 'success');
+    } catch {
+      showToast('Impossible de copier automatiquement. Notez la référence affichée.', 'error');
+    }
+  };
+
   if (confirmation) {
     const { rdv } = confirmation;
     const planifie = rdv.statut === 'CONFIRME';
@@ -136,7 +158,20 @@ export function UsagerPage() {
               attribué. La réception pourra traiter cette demande hors parcours automatique.
             </p>
           )}
-          <p className="mt-4 font-mono text-2xl font-semibold text-institution">{rdv.reference}</p>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <p className="font-mono text-2xl font-semibold text-institution">{rdv.reference}</p>
+            <button
+              type="button"
+              onClick={() => void copierReference(rdv.reference)}
+              className="min-h-9 rounded-[6px] border border-border bg-surface px-3 text-xs font-semibold text-anthracite hover:border-institution"
+            >
+              Copier la référence
+            </button>
+          </div>
+          <p className="mt-2 text-xs text-anthracite-muted">
+            Conservez cette référence : elle permet de suivre votre rendez-vous et de vous
+            présenter à la réception.
+          </p>
           <dl className="mt-4 space-y-2 text-sm">
             <div>
               <dt className="text-xs uppercase text-anthracite-muted">Statut</dt>
@@ -165,10 +200,16 @@ export function UsagerPage() {
               </div>
             )}
           </dl>
+          <Link
+            to={`/usager/suivi?reference=${encodeURIComponent(rdv.reference)}`}
+            className="mt-6 block min-h-11 w-full rounded-[6px] border border-institution bg-institution px-4 py-3 text-center text-sm font-semibold text-ivory hover:bg-institution-dark"
+          >
+            Suivre mon rendez-vous
+          </Link>
           <button
             type="button"
             onClick={resetForm}
-            className="mt-6 min-h-11 w-full rounded-[6px] border border-institution text-sm font-semibold text-institution hover:bg-institution/5"
+            className="mt-3 min-h-11 w-full rounded-[6px] border border-institution text-sm font-semibold text-institution hover:bg-institution/5"
           >
             Nouvelle demande
           </button>
@@ -186,6 +227,12 @@ export function UsagerPage() {
         <p className="mt-2 max-w-2xl text-sm text-anthracite-muted md:text-base">
           Votre demande sera planifiée automatiquement selon les disponibilités institutionnelles.
           La réception confirmera votre arrivée le jour du rendez-vous.
+        </p>
+        <p className="mt-2 text-sm">
+          Vous avez déjà une référence ?{' '}
+          <Link to="/usager/suivi" className="font-semibold text-institution hover:underline">
+            Suivre mon rendez-vous
+          </Link>
         </p>
       </header>
 
@@ -313,11 +360,23 @@ export function UsagerPage() {
                 required
                 type="tel"
                 value={telephone}
-                onChange={(e) => setTelephone(e.target.value)}
-                className={inputClass}
+                onChange={(e) => {
+                  setTelephone(e.target.value);
+                  if (telephoneError) {
+                    setTelephoneError(validateTelephone(e.target.value));
+                  }
+                }}
+                onBlur={() => setTelephoneError(validateTelephone(telephone))}
+                aria-invalid={telephoneError ? true : undefined}
+                className={`${inputClass} ${telephoneError ? 'border-danger' : ''}`}
                 placeholder="0890000000"
                 disabled={formDisabled || submitting}
               />
+              {telephoneError && (
+                <span className="mt-1 block text-xs font-normal text-danger" role="alert">
+                  {telephoneError}
+                </span>
+              )}
             </label>
             <label className="block text-sm font-medium">
               E-mail <span className="font-normal text-anthracite-muted">(optionnel)</span>

@@ -1,7 +1,11 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiClientError } from '../../api/client';
 import { fetchHistoriqueVisite } from '../../api/historique';
-import { fetchNotificationsReception } from '../../api/notifications';
+import {
+  fetchNotificationsReception,
+  marquerNotificationLue,
+  marquerNotificationTraitee,
+} from '../../api/notifications';
 import {
   cloturerVisite,
   decisionVisite,
@@ -13,11 +17,17 @@ import {
   ouvrirVisite,
   rechercheReception,
 } from '../../api/reception';
+import { useToast } from '../../components/ui/ToastProvider';
 import type { HistoriqueAction, Notification, RendezVous, Visite } from '../../types/api';
 import { toLocalDateString } from '../../utils/format';
 import { resolveVisiteActiveForSearch } from './resolveVisiteActiveForSearch';
 
+/** Rafraîchissement automatique de l'écran réception (notifications + registre). */
+const POLLING_INTERVAL_MS = 30_000;
+
 export function useReceptionPage() {
+  const { showToast } = useToast();
+
   const [rdvList, setRdvList] = useState<RendezVous[]>([]);
   const [rdvAVenir, setRdvAVenir] = useState<RendezVous[]>([]);
   const [listLoading, setListLoading] = useState(true);
@@ -26,6 +36,8 @@ export function useReceptionPage() {
 
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [notifLoading, setNotifLoading] = useState(true);
+  const [notifError, setNotifError] = useState<string | null>(null);
+  const [notifActionId, setNotifActionId] = useState<number | null>(null);
 
   const [query, setQuery] = useState('');
   const [searching, setSearching] = useState(false);
@@ -36,6 +48,8 @@ export function useReceptionPage() {
 
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+
+  const [lastRefreshAt, setLastRefreshAt] = useState<Date | null>(null);
 
   const loadRegistre = useCallback(async () => {
     setListLoading(true);
@@ -48,6 +62,7 @@ export function useReceptionPage() {
       setRdvList(duJour);
       setRdvAVenir(aVenir);
       setSearchMode(false);
+      setLastRefreshAt(new Date());
     } catch (e) {
       setRdvList([]);
       setRdvAVenir([]);
@@ -59,14 +74,23 @@ export function useReceptionPage() {
 
   const loadRdvDuJour = loadRegistre;
 
-  const loadNotifications = useCallback(async () => {
-    setNotifLoading(true);
+  const loadNotifications = useCallback(async (options?: { silent?: boolean }) => {
+    if (!options?.silent) {
+      setNotifLoading(true);
+    }
     try {
       setNotifications(await fetchNotificationsReception());
-    } catch {
-      setNotifications([]);
+      setNotifError(null);
+    } catch (e) {
+      // On garde la liste courante : une panne réseau ne doit pas faire
+      // croire qu'il n'y a aucun message en attente.
+      setNotifError(
+        e instanceof ApiClientError ? e.message : 'Impossible de charger les messages reçus.',
+      );
     } finally {
-      setNotifLoading(false);
+      if (!options?.silent) {
+        setNotifLoading(false);
+      }
     }
   }, []);
 
@@ -154,7 +178,7 @@ export function useReceptionPage() {
   }, [searchMode, query, applyVisiteSearchResult, syncSelectedAfterRefresh]);
 
   const runAction = useCallback(
-    async (fn: () => Promise<void>) => {
+    async (fn: () => Promise<void>, successMessage?: string) => {
       setActionLoading(true);
       setActionError(null);
       try {
@@ -164,13 +188,18 @@ export function useReceptionPage() {
         if (visiteActive) {
           await refreshVisite(visiteActive.id);
         }
+        if (successMessage) {
+          showToast(successMessage, 'success');
+        }
       } catch (e) {
-        setActionError(e instanceof ApiClientError ? e.message : 'Action impossible.');
+        const message = e instanceof ApiClientError ? e.message : 'Action impossible.';
+        setActionError(message);
+        showToast(message, 'error');
       } finally {
         setActionLoading(false);
       }
     },
-    [refreshLists, loadNotifications, visiteActive, refreshVisite],
+    [refreshLists, loadNotifications, visiteActive, refreshVisite, showToast],
   );
 
   const handleArrivee = useCallback(() => {
@@ -178,7 +207,7 @@ export function useReceptionPage() {
     void runAction(async () => {
       const rdv = await enregistrerArrivee(selectedRdv.id);
       setSelectedRdv(rdv);
-    });
+    }, 'Arrivée enregistrée.');
   }, [selectedRdv, runAction]);
 
   const handleOuvrirVisite = useCallback(() => {
@@ -193,7 +222,7 @@ export function useReceptionPage() {
       });
       setVisiteActive(visite);
       await refreshVisite(visite.id);
-    });
+    }, 'Visite ouverte.');
   }, [selectedRdv, runAction, refreshVisite]);
 
   const handleOrienter = useCallback(() => {
@@ -204,16 +233,22 @@ export function useReceptionPage() {
         rendezVousId: selectedRdv.id,
       });
       await refreshVisite(visiteActive.id);
-    });
+    }, 'Usager orienté vers le personnel.');
   }, [visiteActive, selectedRdv, runAction, refreshVisite]);
 
   const handleDecision = useCallback(
     (decision: string) => {
       if (!visiteActive) return;
+      const labels: Record<string, string> = {
+        ATTENDRE: 'Décision enregistrée : usager mis en attente.',
+        REPORTER: 'Décision enregistrée : rendez-vous reporté.',
+        REORIENTER: 'Décision enregistrée : usager réorienté.',
+        CONTINUER: 'Décision enregistrée : la visite continue.',
+      };
       void runAction(async () => {
         await decisionVisite(visiteActive.id, decision);
         await refreshVisite(visiteActive.id);
-      });
+      }, labels[decision] ?? 'Décision enregistrée.');
     },
     [visiteActive, runAction, refreshVisite],
   );
@@ -224,8 +259,48 @@ export function useReceptionPage() {
       await cloturerVisite(visiteActive.id);
       setVisiteActive(null);
       setHistorique([]);
-    });
+    }, 'Visite clôturée.');
   }, [visiteActive, runAction]);
+
+  const handleNotificationLue = useCallback(
+    async (id: number) => {
+      setNotifActionId(id);
+      try {
+        await marquerNotificationLue(id);
+        await loadNotifications({ silent: true });
+        showToast('Notification marquée comme lue.', 'success');
+      } catch (e) {
+        showToast(
+          e instanceof ApiClientError ? e.message : 'Impossible de marquer la notification comme lue.',
+          'error',
+        );
+      } finally {
+        setNotifActionId(null);
+      }
+    },
+    [loadNotifications, showToast],
+  );
+
+  const handleNotificationTraitee = useCallback(
+    async (id: number) => {
+      setNotifActionId(id);
+      try {
+        await marquerNotificationTraitee(id);
+        await loadNotifications({ silent: true });
+        showToast('Notification marquée comme traitée.', 'success');
+      } catch (e) {
+        showToast(
+          e instanceof ApiClientError
+            ? e.message
+            : 'Impossible de marquer la notification comme traitée.',
+          'error',
+        );
+      } finally {
+        setNotifActionId(null);
+      }
+    },
+    [loadNotifications, showToast],
+  );
 
   const selectRdv = useCallback((r: RendezVous) => {
     setSelectedRdv((current) => (current?.id === r.id ? null : r));
@@ -241,6 +316,33 @@ export function useReceptionPage() {
     document.getElementById('reception-historique')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }, []);
 
+  // Rafraîchissement automatique : la réception voit arriver les notifications
+  // du personnel et les changements de statut sans recharger la page.
+  const pollRef = useRef<() => Promise<void>>(async () => {});
+  pollRef.current = async () => {
+    if (actionLoading || searching || listLoading || notifActionId !== null) {
+      return;
+    }
+    try {
+      await refreshLists();
+      await loadNotifications({ silent: true });
+      if (visiteActive) {
+        await refreshVisite(visiteActive.id);
+      }
+      setLastRefreshAt(new Date());
+    } catch {
+      // Échec silencieux : le prochain cycle réessaiera, les erreurs de
+      // notifications sont déjà signalées par loadNotifications.
+    }
+  };
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      void pollRef.current();
+    }, POLLING_INTERVAL_MS);
+    return () => window.clearInterval(intervalId);
+  }, []);
+
   const pendingNotifs = notifications.filter((n) => !n.treatedAt);
 
   return {
@@ -252,6 +354,8 @@ export function useReceptionPage() {
     isRdvDuJour,
     notifications,
     notifLoading,
+    notifError,
+    notifActionId,
     query,
     setQuery,
     searching,
@@ -261,13 +365,17 @@ export function useReceptionPage() {
     actionLoading,
     actionError,
     pendingNotifs,
+    lastRefreshAt,
     loadRdvDuJour,
+    loadNotifications,
     handleSearch,
     handleArrivee,
     handleOuvrirVisite,
     handleOrienter,
     handleDecision,
     handleCloturerVisite,
+    handleNotificationLue,
+    handleNotificationTraitee,
     selectRdv,
     clearSelection,
     scrollToHistorique,

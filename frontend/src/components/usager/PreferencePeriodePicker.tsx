@@ -22,6 +22,7 @@ export function PreferencePeriodePicker({ value, onChange }: PreferencePeriodePi
             <button
               key={opt.label}
               type="button"
+              aria-pressed={selected}
               onClick={() => onChange(opt.id)}
               className={`min-h-11 rounded-[6px] border px-3 py-2 text-left text-sm transition-colors ${
                 selected
