@@ -175,7 +175,9 @@ export function ReceptionPage() {
             subtitle={
               notifLoading
                 ? 'Chargement…'
-                : `${pendingNotifs.length} en attente`
+                : notifError
+                  ? 'Erreur de chargement'
+                  : `${pendingNotifs.length} en attente`
             }
           >
             <div id="reception-messages">
