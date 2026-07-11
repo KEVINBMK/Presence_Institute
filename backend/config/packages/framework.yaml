@@ -2,8 +2,13 @@
 framework:
     secret: '%env(APP_SECRET)%'
 
-    # Note that the session will be started ONLY if you read or write from it.
-    session: true
+    # Session PHP pour l'auth démo — cookie Lax pour que le proxy Vite (même origine) conserve la session.
+    session:
+        handler_id: null
+        cookie_secure: false
+        cookie_samesite: lax
+        cookie_path: /
+        cookie_httponly: true
 
     #esi: true
     #fragments: true
