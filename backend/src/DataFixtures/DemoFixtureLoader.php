@@ -131,8 +131,52 @@ final class DemoFixtureLoader
         $ctx->demoRefs['rdvScenarioF'] = $rdvF->getReference();
         $ctx->demoRefs['usagerTelScenarioF'] = '0890000006';
 
-        $ctx->rdvSeq = 8;
-        $ctx->visSeq = 4;
+        // G — Parcours réception 1 : arrivée à enregistrer (Secrétariat / Jean Kabila)
+        $usagerG = $this->usager($ctx, 'Kalonji', 'Joseph', '0890000007', TypeUsager::CITOYEN);
+        $rdvG = $this->rdv($ctx, 9, $usagerG, $bureauSec, $personnelJean, $today, '09:30', '10:00', StatutRendezVous::CONFIRME, 'Retrait d\'attestation', 'Agent de secrétariat');
+        $events->rendezVousCree($rdvG);
+        $events->rendezVousConfirme($rdvG);
+        $ctx->demoRefs['rdvScenarioG'] = $rdvG->getReference();
+        $ctx->demoRefs['usagerTelScenarioG'] = '0890000007';
+
+        // H — Parcours réception 2 : visite à ouvrir (Assistance / Sarah Mavungu)
+        $personnelSarah = $this->perso($ctx, 'sarah_mavungu');
+        $bureauHelp = $this->bureau($ctx, 'Bureau Assistance aux utilisateurs');
+        $usagerH = $this->usager($ctx, 'Mwanza', 'Sarah', '0890000008', TypeUsager::AGENT_PUBLIC);
+        $rdvH = $this->rdv($ctx, 10, $usagerH, $bureauHelp, $personnelSarah, $today, '10:30', '11:00', StatutRendezVous::ARRIVE, 'Problème de compte messagerie', 'Assistante utilisateurs');
+        $events->rendezVousCree($rdvH);
+        $events->rendezVousConfirme($rdvH);
+        $events->arriveeEnregistree($rdvH, null);
+        $ctx->demoRefs['rdvScenarioH'] = $rdvH->getReference();
+        $ctx->demoRefs['usagerTelScenarioH'] = '0890000008';
+
+        // I — Parcours réception 3 : orientation vers le réseau (Junior Kalala)
+        $personnelJunior = $this->perso($ctx, 'junior_kalala');
+        $bureauReseau = $this->bureau($ctx, 'Bureau Maintenance Réseau');
+        $usagerI = $this->usager($ctx, 'Banza', 'Daniel', '0890000009', TypeUsager::PARTENAIRE_TECHNIQUE);
+        $rdvI = $this->rdv($ctx, 11, $usagerI, $bureauReseau, $personnelJunior, $today, '13:00', '13:30', StatutRendezVous::ARRIVE, 'Coupure réseau bâtiment B', 'Technicien réseau');
+        $visiteI = $this->visite($ctx, 5, $usagerI, $reception, StatutVisite::OUVERTE, null, [$rdvI], $today->setTime(12, 55));
+        $ctx->registerOpenVisite($visiteI, $today->format('Y-m-d'));
+        $events->rendezVousCree($rdvI);
+        $events->rendezVousConfirme($rdvI);
+        $events->arriveeEnregistree($rdvI, $visiteI);
+        $events->visiteOuverte($visiteI);
+        $ctx->demoRefs['rdvScenarioI'] = $rdvI->getReference();
+        $ctx->demoRefs['visiteScenarioI'] = $visiteI->getReference();
+        $ctx->demoRefs['usagerTelScenarioI'] = '0890000009';
+
+        // J — Parcours réception 4 : à venir demain (Sécurité / Héritier Lukusa)
+        $personnelHeritier = $this->perso($ctx, 'heritier_lukusa');
+        $bureauSecu = $this->bureau($ctx, 'Bureau Sécurité');
+        $usagerJ = $this->usager($ctx, 'Kasongo', 'Ruth', '0890000010', TypeUsager::VISITEUR_INSTITUTIONNEL);
+        $rdvJ = $this->rdv($ctx, 12, $usagerJ, $bureauSecu, $personnelHeritier, $today->modify('+1 day'), '09:00', '09:30', StatutRendezVous::CONFIRME, 'Demande de badge temporaire', 'Agent sécurité informatique');
+        $events->rendezVousCree($rdvJ);
+        $events->rendezVousConfirme($rdvJ);
+        $ctx->demoRefs['rdvScenarioJ'] = $rdvJ->getReference();
+        $ctx->demoRefs['usagerTelScenarioJ'] = '0890000010';
+
+        $ctx->rdvSeq = 12;
+        $ctx->visSeq = 5;
         $ctx->em->flush();
     }
 
