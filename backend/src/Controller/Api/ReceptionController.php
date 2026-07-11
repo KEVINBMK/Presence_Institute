@@ -7,6 +7,7 @@ use App\DTO\OrienterVisiteDto;
 use App\DTO\OuvrirVisiteDto;
 use App\Presenter\ApiPresenter;
 use App\Service\ReceptionService;
+use App\Service\RendezVousService;
 use App\Service\VisiteService;
 use App\Util\DtoMapper;
 use Doctrine\ORM\EntityManagerInterface;
@@ -21,6 +22,7 @@ class ReceptionController extends AbstractApiController
 {
     public function __construct(
         private ReceptionService $receptionService,
+        private RendezVousService $rendezVousService,
         private VisiteService $visiteService,
         private EntityManagerInterface $em,
         private ValidatorInterface $validator,
@@ -78,6 +80,28 @@ class ReceptionController extends AbstractApiController
     {
         return $this->handle(function () use ($id) {
             $rdv = $this->receptionService->enregistrerArrivee($id);
+            $this->em->flush();
+
+            return $this->jsonOk(ApiPresenter::rendezVous($rdv));
+        });
+    }
+
+    #[Route('/rendez-vous/{id}/reporter', name: 'api_reception_reporter', methods: ['PATCH'])]
+    public function reporter(int $id): JsonResponse
+    {
+        return $this->handle(function () use ($id) {
+            $rdv = $this->rendezVousService->reporter($id);
+            $this->em->flush();
+
+            return $this->jsonOk(ApiPresenter::rendezVous($rdv));
+        });
+    }
+
+    #[Route('/rendez-vous/{id}/non-presente', name: 'api_reception_non_presente', methods: ['PATCH'])]
+    public function nonPresente(int $id): JsonResponse
+    {
+        return $this->handle(function () use ($id) {
+            $rdv = $this->rendezVousService->marquerNonPresente($id);
             $this->em->flush();
 
             return $this->jsonOk(ApiPresenter::rendezVous($rdv));

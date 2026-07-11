@@ -16,7 +16,7 @@ final class Version20260522230000 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
-        $this->addSql('CREATE INDEX idx_rdv_bureau_date_statut ON rendez_vous (bureau_id, date_rendez_vous, statut)');
+        $this->addSql('CREATE INDEX idx_rdv_bureau_date_statut ON rendez_vous (bureau_id, date_rendez_vous, statut(20))');
         $this->addSql('CREATE INDEX idx_rdv_personnel_date_debut ON rendez_vous (personnel_id, date_rendez_vous, heure_debut)');
         $this->addSql('CREATE INDEX idx_visite_usager_created ON visite (usager_id, created_at)');
     }

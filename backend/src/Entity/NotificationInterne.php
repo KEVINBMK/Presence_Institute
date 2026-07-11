@@ -25,7 +25,7 @@ class NotificationInterne
     #[ORM\Column(type: 'text')]
     private string $message;
 
-    #[ORM\Column(type: 'string', enumType: StatutNotification::class)]
+    #[ORM\Column(type: 'string', length: 20, enumType: StatutNotification::class)]
     private StatutNotification $statut = StatutNotification::ENVOYEE;
 
     #[ORM\Column(type: 'string', enumType: ActeurType::class)]

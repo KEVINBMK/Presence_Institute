@@ -33,7 +33,7 @@ final class ApiExceptionSubscriber implements EventSubscriberInterface
             $event->setResponse(new JsonResponse([
                 'success' => false,
                 'error' => $throwable->getMessage(),
-            ], JsonResponse::HTTP_BAD_REQUEST));
+            ], $throwable->getHttpStatus()));
 
             return;
         }

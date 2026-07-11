@@ -152,6 +152,30 @@ class RendezVousService
         return $rdv;
     }
 
+    public function suiviPublic(string $reference, string $telephone): RendezVous
+    {
+        $rdv = $this->findByReference(trim($reference));
+        if ($rdv->getUsager()->getTelephone() !== trim($telephone)) {
+            throw new MetierException('Référence ou téléphone incorrect.');
+        }
+
+        return $rdv;
+    }
+
+    /**
+     * @return array{message: string, smsSimule?: bool}
+     */
+    public function simulerRetrouverReference(\App\DTO\RetrouverReferenceDto $dto): array
+    {
+        // Recherche interne sans exposer les résultats — simulation MVP.
+        $this->rendezVousRepository->search($dto->telephone);
+
+        return [
+            'message' => 'Si une demande correspond à ces informations, la réception pourra vous aider à la retrouver.',
+            'smsSimule' => true,
+        ];
+    }
+
     public function annuler(int $id, string $telephone): RendezVous
     {
         $rdv = $this->getOrFail($id);
