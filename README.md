@@ -2,6 +2,8 @@
 
 Application institutionnelle : **demande** de RDV (planification automatique), réception, personnel, décision réception. L’usager ne choisit pas librement son créneau final.
 
+Le MVP utilise une **authentification simulée par session** afin de séparer les espaces Réception et Personnel (comptes : [`docs/COMPTES-DEMO.md`](docs/COMPTES-DEMO.md)).
+
 ## Cloner le dépôt
 
 ```powershell
@@ -42,6 +44,8 @@ php -S 127.0.0.1:8000 -t public
 
 | Fichier | Contenu |
 |---------|---------|
+| [`docs/PARCOURS-RECEPTION-DEMO.md`](docs/PARCOURS-RECEPTION-DEMO.md) | 5 parcours pour la soutenance (réception) |
+| [`docs/COMPTES-DEMO.md`](docs/COMPTES-DEMO.md) | Comptes réception / personnel (démo) |
 | [`docs/PARCOURS-MVP.md`](docs/PARCOURS-MVP.md) | **Parcours MVP**, 5 modules métier, User Story Mapping, limites |
 | `backend/SETUP-MYSQL.md` | MySQL, `.env.local`, sécurité des secrets |
 | `backend/MVP-DEMO.md` | Soutenance, scénarios A–F |

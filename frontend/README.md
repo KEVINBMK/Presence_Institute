@@ -1,6 +1,6 @@
-# Frontend Atelier — React + Vite
+# Frontend — Atelier rendez-vous
 
-Interfaces **Usager**, **Réception** et **Personnel** (MVP institutionnel).
+Interface React (Vite + TypeScript + Tailwind) pour l’usager public, la réception et le personnel.
 
 ## Démarrage
 
@@ -11,27 +11,25 @@ npm install
 npm run dev
 ```
 
-Ouvrir http://127.0.0.1:5173 — API Symfony sur http://127.0.0.1:8000.
+En développement, le proxy Vite redirige `/api` vers `http://127.0.0.1:8000` (cookies de session).
 
-## Tests
+## Routes
+
+| Route | Accès |
+|-------|--------|
+| `/` | Public — accueil |
+| `/usager` | Public — demande de rendez-vous |
+| `/suivi-rendez-vous` | Public — suivi référence + téléphone |
+| `/connexion` | Public — connexion personnel |
+| `/reception` | Rôle RECEPTION |
+| `/personnel` | Rôle PERSONNEL |
+
+Le MVP utilise une **authentification simulée par session** afin de séparer les espaces Réception et Personnel. Cette couche pourra être remplacée par une authentification de production sans modifier les principales règles métier.
+
+Comptes de démonstration : voir [`docs/COMPTES-DEMO.md`](../docs/COMPTES-DEMO.md).
+
+## Build
 
 ```powershell
-npm test          # exécution unique (Vitest)
-npm run test:watch
+npm run build
 ```
-
-## Étape actuelle
-
-- **Fait** : 3 écrans branchés sur l’API (Usager, Réception, Personnel) + écran « Suivre mon rendez-vous » par référence.
-- **Fait** : bandeau « Prochaine action » (Réception), microcopy alignée MVP — voir [`docs/PARCOURS-MVP.md`](../docs/PARCOURS-MVP.md).
-- **Fait** : toasts de succès/erreur (`ToastProvider`), skeletons de chargement, actualisation automatique de l’écran Réception (30 s), notifications « Marquer comme lu / traité ».
-- Mode **démonstration** : pas d’authentification ; le sélecteur Personnel simule l’utilisateur connecté.
-- Anciens mocks / `TimeSlotPicker` : archivés dans `src/_legacy/` (non utilisés).
-
-## Structure
-
-Voir rapport dans la documentation projet ou `src/` :
-
-- `components/` — UI réutilisable
-- `features/` — pages par rôle
-- `api/` — clients HTTP (`bureaux`, `rendezVous`, `reception`, `personnel`, …)
