@@ -1,0 +1,54 @@
+import { NavLink, Outlet } from 'react-router-dom';
+
+const navItems = [
+  { to: '/', label: 'Accueil', end: true },
+  { to: '/usager', label: 'Prendre rendez-vous' },
+  { to: '/suivi-rendez-vous', label: 'Suivre une demande' },
+  { to: '/connexion', label: 'Connexion du personnel' },
+] as const;
+
+export function PublicLayout() {
+  return (
+    <div className="paper-pattern-subtle min-h-screen">
+      <header className="border-b border-border bg-institution text-ivory">
+        <div className="mx-auto flex max-w-[1440px] flex-col gap-4 px-4 py-4 md:flex-row md:items-center md:justify-between md:px-8 md:py-5">
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-ivory/70">
+              Centre d&apos;accueil C2I
+            </p>
+            <h1 className="font-serif text-xl md:text-2xl">Rendez-vous et visites</h1>
+          </div>
+          <nav
+            className="flex flex-wrap gap-1 rounded-[6px] border border-ivory/20 bg-institution-dark/40 p-1"
+            aria-label="Navigation publique"
+          >
+            {navItems.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={'end' in item ? item.end : false}
+                className={({ isActive }) =>
+                  `min-h-10 rounded-[4px] px-4 py-2 text-sm font-semibold transition-colors ${
+                    isActive
+                      ? 'bg-ivory text-institution'
+                      : 'text-ivory/90 hover:bg-ivory/10'
+                  }`
+                }
+              >
+                {item.label}
+              </NavLink>
+            ))}
+          </nav>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-[1440px] px-4 py-6 md:px-8 md:py-8">
+        <Outlet />
+      </main>
+
+      <footer className="border-t border-border bg-surface/80 px-4 py-4 text-center text-xs text-anthracite-muted">
+        <p>Centre d&apos;accueil C2I</p>
+      </footer>
+    </div>
+  );
+}

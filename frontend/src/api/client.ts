@@ -3,7 +3,15 @@ import { ApiClientError } from './errors';
 
 export { ApiClientError } from './errors';
 
-const baseUrl = import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000';
+/**
+ * En développement : URL relative (proxy Vite → Symfony) pour que le cookie de session
+ * reste sur la même origine (localhost:5173). Une URL absolue vers :8000 casse la session.
+ */
+const configuredApiUrl = (import.meta.env.VITE_API_URL as string | undefined)?.trim() ?? '';
+const baseUrl =
+  import.meta.env.DEV && /^https?:\/\/(127\.0\.0\.1|localhost):8000\/?$/i.test(configuredApiUrl)
+    ? ''
+    : configuredApiUrl;
 
 export type HttpMethod = 'GET' | 'POST' | 'PATCH' | 'DELETE';
 
@@ -18,7 +26,7 @@ async function parseJson<T>(res: Response): Promise<T> {
   }
 
   if (!json.success) {
-    throw new ApiClientError(json.error);
+    throw new ApiClientError(json.error, res.status);
   }
 
   return json.data;
@@ -28,6 +36,7 @@ async function request<T>(method: HttpMethod, path: string, body?: unknown): Pro
   try {
     const res = await fetch(`${baseUrl}${path}`, {
       method,
+      credentials: 'include',
       headers: {
         Accept: 'application/json',
         ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
