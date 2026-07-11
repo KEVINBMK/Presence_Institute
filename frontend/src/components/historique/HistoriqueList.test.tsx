@@ -7,18 +7,16 @@ afterEach(cleanup);
 describe('HistoriqueList', () => {
   it('affiche un état vide clair sans action enregistrée', () => {
     render(<HistoriqueList items={[]} />);
-    expect(
-      screen.getByText('Aucune action enregistrée pour cette visite pour le moment.'),
-    ).toBeTruthy();
+    expect(screen.getByText('Aucune action enregistrée pour cette visite.')).toBeTruthy();
   });
 
-  it('affiche les actions de la visite', () => {
+  it('affiche les actions de la visite avec un libellé lisible', () => {
     render(
       <HistoriqueList
         items={[
           {
             id: 1,
-            typeAction: 'OUVERTURE_VISITE',
+            typeAction: 'VISITE_OUVERTE',
             description: 'Visite ouverte par la réception.',
             auteurType: 'RECEPTION',
             auteurId: 1,
@@ -29,6 +27,7 @@ describe('HistoriqueList', () => {
         ]}
       />,
     );
+    expect(screen.getByText('Visite ouverte')).toBeTruthy();
     expect(screen.getByText('Visite ouverte par la réception.')).toBeTruthy();
   });
 });

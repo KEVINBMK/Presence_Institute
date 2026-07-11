@@ -1,29 +1,29 @@
 import type { DisponibilitePersonnel, StatutRendezVous, StatutVisite } from '../types/api';
 
 export const STATUT_RDV_LABELS: Record<StatutRendezVous, string> = {
-  DEMANDE: 'Demande à traiter',
-  CONFIRME: 'Prévu',
+  DEMANDE: 'À planifier',
+  CONFIRME: 'Confirmé',
   ARRIVE: 'Arrivé',
-  EN_COURS: 'En cours',
-  TERMINE: 'Terminé',
+  EN_COURS: 'En entretien',
+  TERMINE: 'Entretien terminé',
   REPORTE: 'Reporté',
   ANNULE: 'Annulé',
-  NON_PRESENTE: 'Non présenté',
+  NON_PRESENTE: 'Absent',
 };
 
 export const STATUT_VISITE_LABELS: Record<StatutVisite, string> = {
   OUVERTE: 'Visite ouverte',
   EN_ATTENTE: 'En attente',
-  ORIENTEE: 'Orientée',
-  EN_COURS: 'En cours',
-  TERMINEE: 'Clôturée',
+  ORIENTEE: 'Orienté',
+  EN_COURS: 'En prise en charge',
+  TERMINEE: 'Visite terminée',
   SUSPENDUE: 'Suspendue',
 };
 
 export const DISPONIBILITE_LABELS: Record<DisponibilitePersonnel, string> = {
   DISPONIBLE: 'Disponible',
   OCCUPE: 'Occupé',
-  NON_DISPONIBLE_POUR_RECEPTION: 'Ne peut pas recevoir maintenant',
+  NON_DISPONIBLE_POUR_RECEPTION: 'Indisponible pour recevoir',
 };
 
 export type StatusTone = 'neutral' | 'success' | 'warning' | 'danger' | 'info' | 'copper';

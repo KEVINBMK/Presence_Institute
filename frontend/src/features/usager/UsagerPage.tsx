@@ -9,18 +9,18 @@ import {
 } from '../../components/usager/PreferencePeriodePicker';
 import { SectionCard } from '../../components/ui/SectionCard';
 import { useToast } from '../../components/ui/ToastProvider';
-import { FONCTIONS_SOUHAITEES_SUGGESTIONS } from '../../constants/fonctionsSouhaitees';
-import { STATUT_RDV_LABELS } from '../../constants/status';
-import type { Bureau, RendezVous, TypeUsager } from '../../types/api';
-import { TYPE_USAGER_OPTIONS } from '../../types/api';
-import { formatDateFr, toLocalDateString } from '../../utils/format';
+import { FONCTIONS_SOUHAITEES_OPTIONS } from '../../constants/fonctionsSouhaitees';
+import { toLocalDateString } from '../../utils/format';
 import { validateTelephone } from '../../utils/validation';
+import type { Bureau, RendezVousUsager, TypeUsager } from '../../types/api';
+import { TYPE_USAGER_OPTIONS } from '../../types/api';
 
 const inputClass =
   'mt-1 min-h-11 w-full rounded-[6px] border border-border bg-surface px-3 text-anthracite';
 
 type ConfirmationState = {
-  rdv: RendezVous;
+  rdv: RendezVousUsager;
+  telephone: string;
 };
 
 
@@ -69,8 +69,6 @@ export function UsagerPage() {
     void loadBureaux();
   }, [loadBureaux]);
 
-  const selectedBureau = bureaux.find((b) => b.id === bureauId);
-
   const resetForm = () => {
     setConfirmation(null);
     setSubmitError(null);
@@ -118,7 +116,7 @@ export function UsagerPage() {
         motif,
         fonctionSouhaitee: fonctionSouhaitee.trim() || null,
       });
-      setConfirmation({ rdv });
+      setConfirmation({ rdv, telephone: telephone.trim() });
     } catch (err) {
       setSubmitError(
         err instanceof ApiClientError ? err.message : 'Erreur lors de l’envoi de la demande.',
@@ -128,83 +126,62 @@ export function UsagerPage() {
     }
   };
 
-  const copierReference = async (reference: string) => {
-    try {
-      await navigator.clipboard.writeText(reference);
-      showToast('Référence copiée.', 'success');
-    } catch {
-      showToast('Impossible de copier automatiquement. Notez la référence affichée.', 'error');
-    }
-  };
-
   if (confirmation) {
-    const { rdv } = confirmation;
+    const { rdv, telephone: telConfirme } = confirmation;
     const planifie = rdv.statut === 'CONFIRME';
+    const infos = `Référence : ${rdv.reference}\nTéléphone : ${telConfirme}`;
+
+    const copierInfos = async () => {
+      try {
+        await navigator.clipboard.writeText(infos);
+        showToast('Informations copiées.', 'success');
+      } catch {
+        showToast('Copie impossible — notez les informations affichées.', 'error');
+      }
+    };
 
     return (
       <div className="mx-auto max-w-lg">
-        <SectionCard
-          title={planifie ? 'Rendez-vous planifié' : 'Demande enregistrée'}
-          accent
-        >
+        <SectionCard title="Votre demande est enregistrée" accent>
           <p className="text-sm text-anthracite-muted">
             {planifie
-              ? 'Votre rendez-vous a été planifié.'
-              : 'Votre demande est enregistrée et sera traitée par la réception.'}
-          </p>
-          {!planifie && (
-            <p className="mt-3 rounded-[6px] border border-copper/30 bg-copper/5 px-3 py-2 text-sm text-anthracite">
-              Le statut <strong>DEMANDE</strong> signifie qu&apos;aucun créneau n&apos;a encore été
-              attribué. La réception pourra traiter cette demande hors parcours automatique.
-            </p>
-          )}
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <p className="font-mono text-2xl font-semibold text-institution">{rdv.reference}</p>
-            <button
-              type="button"
-              onClick={() => void copierReference(rdv.reference)}
-              className="min-h-9 rounded-[6px] border border-border bg-surface px-3 text-xs font-semibold text-anthracite hover:border-institution"
-            >
-              Copier la référence
-            </button>
-          </div>
-          <p className="mt-2 text-xs text-anthracite-muted">
-            Conservez cette référence : elle permet de suivre votre rendez-vous et de vous
-            présenter à la réception.
+              ? 'Votre rendez-vous est confirmé.'
+              : 'Votre demande est en attente de planification par la réception.'}
           </p>
           <dl className="mt-4 space-y-2 text-sm">
             <div>
-              <dt className="text-xs uppercase text-anthracite-muted">Statut</dt>
-              <dd>{STATUT_RDV_LABELS[rdv.statut]}</dd>
+              <dt className="text-xs uppercase text-anthracite-muted">Référence</dt>
+              <dd className="font-mono text-lg font-semibold text-institution">{rdv.reference}</dd>
             </div>
             <div>
-              <dt className="text-xs uppercase text-anthracite-muted">Bureau</dt>
-              <dd>{rdv.bureau.nom}</dd>
+              <dt className="text-xs uppercase text-anthracite-muted">Téléphone utilisé</dt>
+              <dd>{telConfirme}</dd>
             </div>
-            <div>
-              <dt className="text-xs uppercase text-anthracite-muted">Date</dt>
-              <dd>{formatDateFr(rdv.dateRendezVous)}</dd>
-            </div>
-            {planifie && rdv.heureDebut && rdv.heureFin && (
-              <div>
-                <dt className="text-xs uppercase text-anthracite-muted">Créneau attribué</dt>
-                <dd>
-                  {rdv.heureDebut} — {rdv.heureFin}
-                </dd>
-              </div>
-            )}
-            {rdv.fonctionSouhaitee && (
-              <div>
-                <dt className="text-xs uppercase text-anthracite-muted">Fonction souhaitée</dt>
-                <dd>{rdv.fonctionSouhaitee}</dd>
-              </div>
-            )}
           </dl>
+          <p className="mt-3 text-sm text-anthracite-muted">
+            Conservez ces informations pour suivre votre demande.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => void copierInfos()}
+              className="min-h-10 rounded-[6px] border border-border px-4 text-sm font-semibold hover:border-institution"
+            >
+              Copier les informations
+            </button>
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="min-h-10 rounded-[6px] border border-border px-4 text-sm font-semibold hover:border-institution"
+            >
+              Imprimer le reçu
+            </button>
+          </div>
           <Link
-            to={`/usager/suivi?reference=${encodeURIComponent(rdv.reference)}`}
+            to={`/suivi-rendez-vous?reference=${encodeURIComponent(rdv.reference)}`}
             className="mt-6 block min-h-11 w-full rounded-[6px] border border-institution bg-institution px-4 py-3 text-center text-sm font-semibold text-ivory hover:bg-institution-dark"
           >
-            Suivre mon rendez-vous
+            Suivre ma demande
           </Link>
           <button
             type="button"
@@ -225,13 +202,13 @@ export function UsagerPage() {
       <header>
         <h1 className="font-serif text-2xl text-institution md:text-3xl">Prendre rendez-vous</h1>
         <p className="mt-2 max-w-2xl text-sm text-anthracite-muted md:text-base">
-          Votre demande sera planifiée automatiquement selon les disponibilités institutionnelles.
+          Votre demande sera planifiée selon les disponibilités du bureau choisi.
           La réception confirmera votre arrivée le jour du rendez-vous.
         </p>
         <p className="mt-2 text-sm">
           Vous avez déjà une référence ?{' '}
-          <Link to="/usager/suivi" className="font-semibold text-institution hover:underline">
-            Suivre mon rendez-vous
+          <Link to="/suivi-rendez-vous" className="font-semibold text-institution hover:underline">
+            Suivre ma demande
           </Link>
         </p>
       </header>
@@ -248,192 +225,103 @@ export function UsagerPage() {
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2 lg:gap-8">
-        <SectionCard
-          title="Bureau et préférences"
-          subtitle={selectedBureau?.localisation ?? 'Chargement…'}
-        >
-          {bureauxLoading && (
-            <p className="text-sm text-anthracite-muted">Chargement des bureaux…</p>
-          )}
-
+      <form className="space-y-8" onSubmit={(e) => void handleSubmit(e)}>
+        <SectionCard title="1. Quel service recherchez-vous ?">
+          {/* bureau + fonction */}
+          {bureauxLoading && <p className="text-sm text-anthracite-muted">Chargement des bureaux…</p>}
           {bureauxError && (
             <div className="space-y-3">
-              <p className="text-sm text-danger" role="alert">
-                {bureauxError}
-              </p>
-              <button
-                type="button"
-                onClick={() => void loadBureaux()}
-                className="min-h-11 rounded-[6px] border border-border px-4 text-sm font-semibold hover:border-institution"
-              >
+              <p className="text-sm text-danger">{bureauxError}</p>
+              <button type="button" onClick={() => void loadBureaux()} className="min-h-11 rounded-[6px] border px-4 text-sm font-semibold">
                 Réessayer
               </button>
             </div>
           )}
-
-          {!bureauxLoading && !bureauxError && bureaux.length === 0 && (
-            <p className="text-sm text-anthracite-muted">Aucun bureau actif disponible.</p>
-          )}
-
           {!bureauxLoading && !bureauxError && bureaux.length > 0 && (
             <div className="space-y-4">
               <label className="block text-sm font-medium">
                 Bureau
-                <select
-                  required
-                  value={bureauId}
-                  onChange={(e) => setBureauId(Number(e.target.value))}
-                  className={inputClass}
-                  disabled={formDisabled}
-                >
+                <select required value={bureauId} onChange={(e) => setBureauId(Number(e.target.value))} className={inputClass} disabled={formDisabled}>
                   {bureaux.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.nom}
-                    </option>
+                    <option key={b.id} value={b.id}>{b.nom}</option>
                   ))}
                 </select>
               </label>
               <label className="block text-sm font-medium">
-                Date souhaitée
-                <input
-                  type="date"
-                  required
-                  min={toLocalDateString()}
-                  value={dateSouhaitee}
-                  onChange={(e) => setDateSouhaitee(e.target.value)}
-                  className={inputClass}
-                  disabled={formDisabled}
-                />
-              </label>
-              <PreferencePeriodePicker
-                value={periodeSouhaitee}
-                onChange={setPeriodeSouhaitee}
-              />
-              <label className="block text-sm font-medium">
-                Fonction ou personne recherchée{' '}
+                Fonction recherchée{' '}
                 <span className="font-normal text-anthracite-muted">(optionnel)</span>
-                <input
-                  type="text"
-                  list="fonctions-souhaitees"
+                <select
                   value={fonctionSouhaitee}
                   onChange={(e) => setFonctionSouhaitee(e.target.value)}
                   className={inputClass}
-                  placeholder="Ex. assistant du bureau, technicien, responsable…"
                   disabled={formDisabled}
-                />
-                <datalist id="fonctions-souhaitees">
-                  {FONCTIONS_SOUHAITEES_SUGGESTIONS.map((f) => (
-                    <option key={f} value={f} />
+                >
+                  <option value="">Aucune préférence</option>
+                  {FONCTIONS_SOUHAITEES_OPTIONS.map((f) => (
+                    <option key={f} value={f}>
+                      {f}
+                    </option>
                   ))}
-                </datalist>
+                </select>
               </label>
             </div>
           )}
         </SectionCard>
 
-        <SectionCard title="Vos coordonnées">
-          <form className="space-y-4" onSubmit={(e) => void handleSubmit(e)}>
+        <SectionCard title="2. Quand souhaitez-vous venir ?">
+          <div className="space-y-4">
+            <label className="block text-sm font-medium">
+              Date souhaitée
+              <input type="date" required min={toLocalDateString()} value={dateSouhaitee} onChange={(e) => setDateSouhaitee(e.target.value)} className={inputClass} disabled={formDisabled} />
+            </label>
+            <PreferencePeriodePicker value={periodeSouhaitee} onChange={setPeriodeSouhaitee} />
+          </div>
+        </SectionCard>
+
+        <SectionCard title="3. Vos coordonnées">
+          <div className="space-y-4">
             <label className="block text-sm font-medium">
               Nom
-              <input
-                required
-                value={nom}
-                onChange={(e) => setNom(e.target.value)}
-                className={inputClass}
-                disabled={formDisabled || submitting}
-              />
+              <input required value={nom} onChange={(e) => setNom(e.target.value)} className={inputClass} placeholder="Ex. Kabongo" disabled={formDisabled || submitting} />
             </label>
             <label className="block text-sm font-medium">
               Prénom
-              <input
-                required
-                value={prenom}
-                onChange={(e) => setPrenom(e.target.value)}
-                className={inputClass}
-                disabled={formDisabled || submitting}
-              />
+              <input required value={prenom} onChange={(e) => setPrenom(e.target.value)} className={inputClass} placeholder="Ex. Marie" disabled={formDisabled || submitting} />
             </label>
             <label className="block text-sm font-medium">
               Téléphone
-              <input
-                required
-                type="tel"
-                value={telephone}
-                onChange={(e) => {
-                  setTelephone(e.target.value);
-                  if (telephoneError) {
-                    setTelephoneError(validateTelephone(e.target.value));
-                  }
-                }}
-                onBlur={() => setTelephoneError(validateTelephone(telephone))}
-                aria-invalid={telephoneError ? true : undefined}
-                className={`${inputClass} ${telephoneError ? 'border-danger' : ''}`}
-                placeholder="0890000000"
-                disabled={formDisabled || submitting}
-              />
-              {telephoneError && (
-                <span className="mt-1 block text-xs font-normal text-danger" role="alert">
-                  {telephoneError}
-                </span>
-              )}
+              <input required type="tel" value={telephone} onChange={(e) => { setTelephone(e.target.value); if (telephoneError) setTelephoneError(validateTelephone(e.target.value)); }} onBlur={() => setTelephoneError(validateTelephone(telephone))} className={`${inputClass} ${telephoneError ? 'border-danger' : ''}`} placeholder="0890000000" disabled={formDisabled || submitting} />
+              {telephoneError && <span className="mt-1 block text-xs text-danger">{telephoneError}</span>}
             </label>
             <label className="block text-sm font-medium">
               E-mail <span className="font-normal text-anthracite-muted">(optionnel)</span>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className={inputClass}
-                placeholder="nom@exemple.cd"
-                disabled={formDisabled || submitting}
-              />
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} placeholder="nom@exemple.cd" disabled={formDisabled || submitting} />
             </label>
-            <label className="block text-sm font-medium">
-              Type d&apos;usager
-              <select
-                required
-                value={typeUsager}
-                onChange={(e) => setTypeUsager(e.target.value as TypeUsager)}
-                className={inputClass}
-                disabled={formDisabled || submitting}
-              >
-                {TYPE_USAGER_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="block text-sm font-medium">
-              Motif
-              <textarea
-                required
-                rows={3}
-                value={motif}
-                onChange={(e) => setMotif(e.target.value)}
-                className="mt-1 w-full rounded-[6px] border border-border bg-surface px-3 py-2 disabled:opacity-60"
-                placeholder="Objet de la visite"
-                disabled={formDisabled || submitting}
-              />
-            </label>
-
-            {submitError && (
-              <p className="rounded-[6px] border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger" role="alert">
-                {submitError}
-              </p>
-            )}
-
-            <button
-              type="submit"
-              disabled={formDisabled || submitting}
-              className="min-h-12 w-full rounded-[6px] border border-institution bg-institution text-base font-semibold text-ivory hover:bg-institution-dark disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {submitting ? 'Envoi en cours…' : 'Soumettre la demande'}
-            </button>
-          </form>
+            <details className="text-sm">
+              <summary className="cursor-pointer font-medium text-institution">Informations supplémentaires</summary>
+              <label className="mt-3 block font-medium">
+                Type d&apos;usager
+                <select value={typeUsager} onChange={(e) => setTypeUsager(e.target.value as TypeUsager)} className={inputClass} disabled={formDisabled || submitting}>
+                  {TYPE_USAGER_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </label>
+            </details>
+          </div>
         </SectionCard>
-      </div>
+
+        <SectionCard title="4. Motif de la demande">
+          <label className="block text-sm font-medium">
+            Motif
+            <textarea required rows={3} value={motif} onChange={(e) => setMotif(e.target.value)} className="mt-1 w-full rounded-[6px] border border-border bg-surface px-3 py-2" placeholder="Ex. Revue des spécifications du projet" disabled={formDisabled || submitting} />
+          </label>
+          {submitError && <p className="mt-3 text-sm text-danger">{submitError}</p>}
+          <button type="submit" disabled={formDisabled || submitting} className="mt-4 min-h-12 w-full rounded-[6px] border border-institution bg-institution text-base font-semibold text-ivory hover:bg-institution-dark disabled:opacity-50">
+            {submitting ? 'Envoi en cours…' : 'Envoyer ma demande'}
+          </button>
+        </SectionCard>
+      </form>
     </div>
   );
 }

@@ -55,6 +55,14 @@ export function createReceptionApi(client: HttpClient) {
     cloturerVisite(visiteId: number): Promise<Visite> {
       return client.patch<Visite>(API_ROUTES.reception.cloturerVisite(visiteId));
     },
+
+    reporterRdv(rdvId: number): Promise<RendezVous> {
+      return client.patch<RendezVous>(API_ROUTES.reception.reporterRdv(rdvId));
+    },
+
+    marquerAbsent(rdvId: number): Promise<RendezVous> {
+      return client.patch<RendezVous>(API_ROUTES.reception.marquerAbsent(rdvId));
+    },
   };
 }
 
@@ -76,3 +84,5 @@ export const orienterVisite = (
 export const decisionVisite = (visiteId: number, decision: string) =>
   receptionApi.decisionVisite(visiteId, decision);
 export const cloturerVisite = (visiteId: number) => receptionApi.cloturerVisite(visiteId);
+export const reporterRdv = (rdvId: number) => receptionApi.reporterRdv(rdvId);
+export const marquerAbsent = (rdvId: number) => receptionApi.marquerAbsent(rdvId);
