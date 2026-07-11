@@ -29,7 +29,7 @@ class PersonnelService
 
     public function getOrFail(int $id): Personnel
     {
-        $personnel = $this->personnelRepository->find($id);
+        $personnel = $this->personnelRepository->findOneWithBureau($id);
         if (!$personnel || !$personnel->isActif()) {
             throw new MetierException('Personnel introuvable.');
         }

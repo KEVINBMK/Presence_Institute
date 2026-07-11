@@ -44,7 +44,7 @@ class RendezVous
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $fonctionSouhaitee = null;
 
-    #[ORM\Column(type: 'string', enumType: StatutRendezVous::class)]
+    #[ORM\Column(type: 'string', length: 20, enumType: StatutRendezVous::class)]
     private StatutRendezVous $statut = StatutRendezVous::DEMANDE;
 
     #[ORM\ManyToOne(inversedBy: 'rendezVous')]

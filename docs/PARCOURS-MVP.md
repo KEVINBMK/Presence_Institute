@@ -57,7 +57,9 @@ Les modules **Planification** et **Suivi** sont principalement portés par le **
 - En tant qu’usager, je veux renseigner mon identité afin que la réception puisse m’identifier.
 - En tant qu’usager, je veux choisir le bureau concerné afin d’adresser ma demande au bon service.
 - En tant qu’usager, je veux indiquer une date ou période souhaitée afin que le système puisse planifier mon rendez-vous.
-- En tant qu’usager, je veux recevoir une référence afin de suivre ou présenter mon rendez-vous à la réception.
+- En tant qu’usager, je veux suivre ma demande avec **référence + téléphone** afin de consulter le statut sans compte complexe.
+
+**Authentification :** le MVP utilise une authentification simulée par session afin de séparer les espaces Réception et Personnel (voir [`COMPTES-DEMO.md`](COMPTES-DEMO.md)).
 
 **Règle :** l’usager ne choisit pas l’heure finale. Le système attribue le créneau.
 

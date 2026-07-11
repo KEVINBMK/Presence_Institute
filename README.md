@@ -2,6 +2,8 @@
 
 Application institutionnelle : **demande** de RDV (planification automatique), réception, personnel, décision réception. L’usager ne choisit pas librement son créneau final.
 
+Le MVP utilise une **authentification simulée par session** afin de séparer les espaces Réception et Personnel (comptes : [`docs/COMPTES-DEMO.md`](docs/COMPTES-DEMO.md)).
+
 ## Cloner le dépôt
 
 ```powershell
@@ -34,12 +36,16 @@ php bin/console doctrine:fixtures:load --group=demo --no-interaction
 php -S 127.0.0.1:8000 -t public
 ```
 
+> **Important — tables vides ?** Les rendez-vous du jeu DEMO sont datés du **jour où les fixtures sont chargées** (`today`). Si les fixtures ont été chargées un autre jour, l'écran Réception « Rendez-vous du jour » sera vide. **Rechargez les fixtures le jour de la démonstration** avec la commande `doctrine:fixtures:load --group=demo` ci-dessus (attention : cela purge et recrée les données).
+
 4. **Tests** — [backend/MVP-DEMO.md](backend/MVP-DEMO.md) et dossier Postman **Scénario DEMO — Données fixtures A–F**.
 
 ## Documentation
 
 | Fichier | Contenu |
 |---------|---------|
+| [`docs/PARCOURS-RECEPTION-DEMO.md`](docs/PARCOURS-RECEPTION-DEMO.md) | 5 parcours pour la soutenance (réception) |
+| [`docs/COMPTES-DEMO.md`](docs/COMPTES-DEMO.md) | Comptes réception / personnel (démo) |
 | [`docs/PARCOURS-MVP.md`](docs/PARCOURS-MVP.md) | **Parcours MVP**, 5 modules métier, User Story Mapping, limites |
 | `backend/SETUP-MYSQL.md` | MySQL, `.env.local`, sécurité des secrets |
 | `backend/MVP-DEMO.md` | Soutenance, scénarios A–F |

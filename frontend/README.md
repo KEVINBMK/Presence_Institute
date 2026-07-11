@@ -1,6 +1,6 @@
-# Frontend Atelier — React + Vite
+# Frontend — Atelier rendez-vous
 
-Interfaces **Usager**, **Réception** et **Personnel** (MVP institutionnel).
+Interface React (Vite + TypeScript + Tailwind) pour l’usager public, la réception et le personnel.
 
 ## Démarrage
 
@@ -11,19 +11,25 @@ npm install
 npm run dev
 ```
 
-Ouvrir http://127.0.0.1:5173 — API Symfony sur http://127.0.0.1:8000.
+En développement, le proxy Vite redirige `/api` vers `http://127.0.0.1:8000` (cookies de session).
 
-## Étape actuelle
+## Routes
 
-- **Fait** : 3 écrans branchés sur l’API (Usager, Réception, Personnel).
-- **Fait** : bandeau « Prochaine action » (Réception), microcopy alignée MVP — voir [`docs/PARCOURS-MVP.md`](../docs/PARCOURS-MVP.md).
-- Mode **démonstration** : pas d’authentification ; le sélecteur Personnel simule l’utilisateur connecté.
-- Anciens mocks / `TimeSlotPicker` : archivés dans `src/_legacy/` (non utilisés).
+| Route | Accès |
+|-------|--------|
+| `/` | Public — accueil |
+| `/usager` | Public — demande de rendez-vous |
+| `/suivi-rendez-vous` | Public — suivi référence + téléphone |
+| `/connexion` | Public — connexion personnel |
+| `/reception` | Rôle RECEPTION |
+| `/personnel` | Rôle PERSONNEL |
 
-## Structure
+Le MVP utilise une **authentification simulée par session** afin de séparer les espaces Réception et Personnel. Cette couche pourra être remplacée par une authentification de production sans modifier les principales règles métier.
 
-Voir rapport dans la documentation projet ou `src/` :
+Comptes de démonstration : voir [`docs/COMPTES-DEMO.md`](../docs/COMPTES-DEMO.md).
 
-- `components/` — UI réutilisable
-- `features/` — pages par rôle
-- `api/` — clients HTTP (`bureaux`, `rendezVous`, `reception`, `personnel`, …)
+## Build
+
+```powershell
+npm run build
+```

@@ -76,3 +76,24 @@
     background-size: 16px 16px;
   }
 }
+
+[data-theme='dark'] {
+  --color-institution: #7c8cff;
+  --color-institution-dark: #232b49;
+  --color-ivory: #15171a;
+  --color-ivory-dark: #1d2024;
+  --color-anthracite: #f1f3f5;
+  --color-anthracite-muted: #b1b7c0;
+  --color-copper: #d4a574;
+  --color-copper-light: #e8c9a0;
+  --color-border: #343a40;
+  --color-surface: #202328;
+  --color-success: #52b788;
+  --color-warning: #f4a261;
+  --color-danger: #e76f51;
+  --color-info: #7c8cff;
+}
+
+[data-theme='dark'] .paper-pattern-subtle {
+  background-image: radial-gradient(circle at 1px 1px, rgb(124 140 255 / 0.08) 1px, transparent 0);
+}

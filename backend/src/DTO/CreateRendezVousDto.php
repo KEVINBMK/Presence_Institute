@@ -2,6 +2,7 @@
 
 namespace App\DTO;
 
+use App\Support\FonctionsSouhaitees;
 use Symfony\Component\Validator\Constraints as Assert;
 
 class CreateRendezVousDto
@@ -33,8 +34,8 @@ class CreateRendezVousDto
     #[Assert\NotBlank]
     public string $motif = '';
 
-    /** Fonction ou rôle recherché (texte libre, sans nom du personnel). */
-    #[Assert\Length(max: 255)]
+    /** Fonction recherchée — liste fermée (optionnelle). */
+    #[Assert\Choice(callback: [FonctionsSouhaitees::class, 'choices'], message: 'Choisissez une fonction dans la liste proposée.')]
     public ?string $fonctionSouhaitee = null;
 
     #[Assert\Choice(choices: [

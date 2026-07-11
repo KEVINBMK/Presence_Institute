@@ -1,5 +1,5 @@
 import type { PeriodeSouhaitee } from '../components/usager/PreferencePeriodePicker';
-import type { RendezVous, TypeUsager } from '../types/api';
+import type { RendezVousUsager, TypeUsager } from '../types/api';
 import type { HttpClient } from './http/HttpClient';
 import { fetchHttpClient } from './http/FetchHttpClient';
 import { API_ROUTES } from './routes';
@@ -15,6 +15,21 @@ export interface CreateRendezVousPayload {
   periodeSouhaitee?: PeriodeSouhaitee;
   motif: string;
   fonctionSouhaitee?: string | null;
+}
+
+export interface SuiviRendezVousPayload {
+  reference: string;
+  telephone: string;
+}
+
+export interface RetrouverReferencePayload {
+  telephone: string;
+  nom?: string;
+  dateApproximative?: string;
+}
+
+export interface SuiviRendezVousUsager extends RendezVousUsager {
+  instructions: string;
 }
 
 function buildCreateBody(payload: CreateRendezVousPayload): Record<string, unknown> {
@@ -47,9 +62,19 @@ function buildCreateBody(payload: CreateRendezVousPayload): Record<string, unkno
 
 export function createRendezVousApi(client: HttpClient) {
   return {
-    /** Demande usager — le serveur attribue le créneau (pas de heureDebut côté client). */
-    create(payload: CreateRendezVousPayload): Promise<RendezVous> {
-      return client.post<RendezVous>(API_ROUTES.rendezVous.create, buildCreateBody(payload));
+    create(payload: CreateRendezVousPayload): Promise<RendezVousUsager> {
+      return client.post<RendezVousUsager>(API_ROUTES.rendezVous.create, buildCreateBody(payload));
+    },
+
+    suivi(payload: SuiviRendezVousPayload): Promise<SuiviRendezVousUsager> {
+      return client.post<SuiviRendezVousUsager>(API_ROUTES.rendezVous.suivi, {
+        reference: payload.reference.trim(),
+        telephone: payload.telephone.trim(),
+      });
+    },
+
+    retrouverReference(payload: RetrouverReferencePayload): Promise<{ message: string; smsSimule?: boolean }> {
+      return client.post(API_ROUTES.rendezVous.retrouverReference, payload);
     },
   };
 }
@@ -58,3 +83,8 @@ export const rendezVousApi = createRendezVousApi(fetchHttpClient);
 
 export const createRendezVous = (payload: CreateRendezVousPayload) =>
   rendezVousApi.create(payload);
+
+export const suiviRendezVous = (payload: SuiviRendezVousPayload) => rendezVousApi.suivi(payload);
+
+export const retrouverReference = (payload: RetrouverReferencePayload) =>
+  rendezVousApi.retrouverReference(payload);

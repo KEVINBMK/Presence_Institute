@@ -196,12 +196,16 @@ class RendezVousRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('r')
             ->leftJoin('r.usager', 'u')->addSelect('u')
             ->leftJoin('r.bureau', 'b')->addSelect('b')
+            ->leftJoin('r.personnel', 'p')->addSelect('p')
             ->andWhere('r.personnel = :personnel')
             ->andWhere('r.dateRendezVous = :today')
             ->andWhere('r.statut IN (:statuts)')
             ->setParameter('personnel', $personnel)
             ->setParameter('today', $date)
-            ->setParameter('statuts', RendezVousStatutsActifs::POUR_CRENEAU)
+            ->setParameter('statuts', [
+                ...RendezVousStatutsActifs::POUR_CRENEAU,
+                StatutRendezVous::TERMINE,
+            ])
             ->orderBy('r.heureDebut', 'ASC')
             ->getQuery()
             ->getResult();

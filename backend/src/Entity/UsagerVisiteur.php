@@ -11,7 +11,6 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity(repositoryClass: UsagerVisiteurRepository::class)]
 #[ORM\Table(name: 'usager_visiteur')]
 #[ORM\UniqueConstraint(name: 'uniq_usager_telephone', columns: ['telephone'])]
-#[ORM\Index(columns: ['telephone'], name: 'idx_usager_telephone')]
 #[ORM\Index(columns: ['nom', 'prenom'], name: 'idx_usager_nom_prenom')]
 #[ORM\Index(columns: ['type_usager'], name: 'idx_usager_type')]
 class UsagerVisiteur

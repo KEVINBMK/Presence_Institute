@@ -4,6 +4,7 @@ namespace App\Controller\Api;
 
 use App\DTO\DisponibilitePersonnelDto;
 use App\Presenter\ApiPresenter;
+use App\Service\DemoAuthService;
 use App\Service\PersonnelService;
 use App\Util\DtoMapper;
 use Doctrine\ORM\EntityManagerInterface;
@@ -17,32 +18,37 @@ class PersonnelController extends AbstractApiController
 {
     public function __construct(
         private PersonnelService $personnelService,
+        private DemoAuthService $demoAuth,
         private EntityManagerInterface $em,
         private ValidatorInterface $validator,
     ) {
     }
 
-    #[Route('', name: 'api_personnel_list', methods: ['GET'])]
-    public function list(): JsonResponse
+    #[Route('/me', name: 'api_personnel_me', methods: ['GET'])]
+    public function me(): JsonResponse
     {
-        $items = array_map(
-            fn ($p) => ApiPresenter::personnelListe($p),
-            $this->personnelService->listActifs(),
-        );
+        return $this->handle(function () {
+            $personnelId = $this->demoAuth->requirePersonnelId();
+            $personnel = $this->personnelService->getOrFail($personnelId);
 
-        return $this->jsonOk($items);
-    }
-
-    #[Route('/{id}/rendez-vous', name: 'api_personnel_rdv', methods: ['GET'], requirements: ['id' => '\d+'])]
-    public function rendezVous(int $id): JsonResponse
-    {
-        return $this->handle(function () use ($id) {
-            return $this->jsonOk($this->rendezVousList($this->personnelService->getRendezVousAssignes($id)));
+            return $this->jsonOk(ApiPresenter::personnelListe($personnel));
         });
     }
 
-    #[Route('/{id}/disponibilite', name: 'api_personnel_dispo', methods: ['PATCH'], requirements: ['id' => '\d+'])]
-    public function disponibilite(int $id, Request $request): JsonResponse
+    #[Route('/me/rendez-vous', name: 'api_personnel_me_rdv', methods: ['GET'])]
+    public function mesRendezVous(): JsonResponse
+    {
+        return $this->handle(function () {
+            $personnelId = $this->demoAuth->requirePersonnelId();
+
+            return $this->jsonOk(
+                $this->rendezVousList($this->personnelService->getRendezVousAssignes($personnelId)),
+            );
+        });
+    }
+
+    #[Route('/me/disponibilite', name: 'api_personnel_me_dispo', methods: ['PATCH'])]
+    public function maDisponibilite(Request $request): JsonResponse
     {
         try {
             $dto = DtoMapper::map($request, DisponibilitePersonnelDto::class);
@@ -55,18 +61,20 @@ class PersonnelController extends AbstractApiController
             return $this->validationErrors($errors);
         }
 
-        return $this->handle(function () use ($id, $dto) {
-            $personnel = $this->personnelService->changerDisponibilite($id, $dto);
+        return $this->handle(function () use ($dto) {
+            $personnelId = $this->demoAuth->requirePersonnelId();
+            $personnel = $this->personnelService->changerDisponibilite($personnelId, $dto);
             $this->em->flush();
 
             return $this->jsonOk(ApiPresenter::personnel($personnel));
         });
     }
 
-    #[Route('/{personnelId}/rendez-vous/{id}/demarrer', name: 'api_personnel_demarrer', methods: ['PATCH'])]
-    public function demarrer(int $personnelId, int $id): JsonResponse
+    #[Route('/me/rendez-vous/{id}/demarrer', name: 'api_personnel_me_demarrer', methods: ['PATCH'])]
+    public function demarrer(int $id): JsonResponse
     {
-        return $this->handle(function () use ($personnelId, $id) {
+        return $this->handle(function () use ($id) {
+            $personnelId = $this->demoAuth->requirePersonnelId();
             $rdv = $this->personnelService->demarrerPriseEnCharge($personnelId, $id);
             $this->em->flush();
 
@@ -74,37 +82,15 @@ class PersonnelController extends AbstractApiController
         });
     }
 
-    #[Route('/{personnelId}/rendez-vous/{id}/cloturer', name: 'api_personnel_cloturer', methods: ['PATCH'])]
-    public function cloturer(int $personnelId, int $id): JsonResponse
+    #[Route('/me/rendez-vous/{id}/cloturer', name: 'api_personnel_me_cloturer', methods: ['PATCH'])]
+    public function cloturer(int $id): JsonResponse
     {
-        return $this->handle(function () use ($personnelId, $id) {
+        return $this->handle(function () use ($id) {
+            $personnelId = $this->demoAuth->requirePersonnelId();
             $rdv = $this->personnelService->cloturerPriseEnCharge($personnelId, $id);
             $this->em->flush();
 
             return $this->jsonOk(ApiPresenter::rendezVous($rdv));
         });
-    }
-
-    /** Compatibilité anciennes routes Postman (personnelId requis en query). */
-    #[Route('/rendez-vous/{id}/demarrer', name: 'api_personnel_demarrer_legacy', methods: ['PATCH'])]
-    public function demarrerLegacy(int $id, Request $request): JsonResponse
-    {
-        $personnelId = (int) $request->query->get('personnelId', 0);
-        if ($personnelId <= 0) {
-            return $this->jsonError('Paramètre personnelId requis (?personnelId=1).');
-        }
-
-        return $this->demarrer($personnelId, $id);
-    }
-
-    #[Route('/rendez-vous/{id}/cloturer', name: 'api_personnel_cloturer_legacy', methods: ['PATCH'])]
-    public function cloturerLegacy(int $id, Request $request): JsonResponse
-    {
-        $personnelId = (int) $request->query->get('personnelId', 0);
-        if ($personnelId <= 0) {
-            return $this->jsonError('Paramètre personnelId requis (?personnelId=1).');
-        }
-
-        return $this->cloturer($personnelId, $id);
     }
 }

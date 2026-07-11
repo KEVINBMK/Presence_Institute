@@ -4,6 +4,8 @@ namespace App\Controller\Api;
 
 use App\DTO\AnnulerRendezVousDto;
 use App\DTO\CreateRendezVousDto;
+use App\DTO\RetrouverReferenceDto;
+use App\DTO\SuiviRendezVousDto;
 use App\Presenter\ApiPresenter;
 use App\Service\RendezVousService;
 use App\Util\DtoMapper;
@@ -45,13 +47,54 @@ class RendezVousController extends AbstractApiController
         });
     }
 
+    #[Route('/suivi', name: 'api_rdv_suivi', methods: ['POST'])]
+    public function suivi(Request $request): JsonResponse
+    {
+        try {
+            $dto = DtoMapper::map($request, SuiviRendezVousDto::class);
+        } catch (\InvalidArgumentException $e) {
+            return $this->jsonError($e->getMessage());
+        }
+
+        $errors = $this->validator->validate($dto);
+        if (count($errors) > 0) {
+            return $this->validationErrors($errors);
+        }
+
+        return $this->handle(function () use ($dto) {
+            $rdv = $this->rendezVousService->suiviPublic($dto->reference, $dto->telephone);
+
+            return $this->jsonOk(ApiPresenter::suiviUsager($rdv));
+        });
+    }
+
+    #[Route('/retrouver-reference', name: 'api_rdv_retrouver_ref', methods: ['POST'])]
+    public function retrouverReference(Request $request): JsonResponse
+    {
+        try {
+            $dto = DtoMapper::map($request, RetrouverReferenceDto::class);
+        } catch (\InvalidArgumentException $e) {
+            return $this->jsonError($e->getMessage());
+        }
+
+        $errors = $this->validator->validate($dto);
+        if (count($errors) > 0) {
+            return $this->validationErrors($errors);
+        }
+
+        return $this->handle(function () use ($dto) {
+            return $this->jsonOk($this->rendezVousService->simulerRetrouverReference($dto));
+        });
+    }
+
+    /** Réservé à la réception (route protégée par RequireDemoRoleSubscriber). */
     #[Route('/reference/{reference}', name: 'api_rdv_by_ref', methods: ['GET'])]
     public function byReference(string $reference): JsonResponse
     {
         return $this->handle(function () use ($reference) {
             $rdv = $this->rendezVousService->findByReference($reference);
 
-            return $this->jsonOk(ApiPresenter::rendezVousPourUsager($rdv));
+            return $this->jsonOk(ApiPresenter::rendezVous($rdv));
         });
     }
 

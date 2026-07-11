@@ -3,6 +3,7 @@
 namespace App\Presenter;
 
 use App\Entity\Bureau;
+use App\Entity\CompteInterneDemo;
 use App\Entity\HistoriqueAction;
 use App\Entity\NotificationInterne;
 use App\Entity\Personnel;
@@ -157,5 +158,43 @@ final class ApiPresenter
             'disponible' => $disponible,
             'personnelId' => $personnelId,
         ];
+    }
+
+    public static function compteDemo(CompteInterneDemo $compte): array
+    {
+        $payload = [
+            'id' => $compte->getId(),
+            'identifiant' => $compte->getIdentifiant(),
+            'nomComplet' => $compte->getNomComplet(),
+            'role' => $compte->getRole()->value,
+            'personnelId' => $compte->getPersonnel()?->getId(),
+        ];
+
+        if ($compte->getPersonnel()) {
+            $p = $compte->getPersonnel();
+            $payload['fonction'] = $p->getFonction();
+            $payload['bureau'] = $p->getBureau()->getNom();
+            $payload['disponibiliteOperationnelle'] = $p->getDisponibiliteOperationnelle()->value;
+        }
+
+        return $payload;
+    }
+
+    /** Instructions usager selon le statut — sans données internes. */
+    public static function suiviUsager(RendezVous $r): array
+    {
+        $data = self::rendezVousPourUsager($r);
+        $data['instructions'] = match ($r->getStatut()->value) {
+            'DEMANDE' => 'Votre demande sera traitée par la réception. Conservez votre référence.',
+            'CONFIRME' => 'Présentez-vous à la réception à l\'heure indiquée avec votre référence.',
+            'ARRIVE', 'EN_COURS' => 'Vous êtes pris en charge. Attendez les instructions de la réception.',
+            'TERMINE' => 'Votre visite est terminée. Vous pouvez quitter le site ou attendre la réception.',
+            'REPORTE' => 'Votre rendez-vous a été reporté. La réception vous contactera.',
+            'ANNULE' => 'Ce rendez-vous a été annulé.',
+            'NON_PRESENTE' => 'Vous avez été marqué absent. Contactez la réception pour replanifier.',
+            default => 'Consultez la réception pour toute question.',
+        };
+
+        return $data;
     }
 }

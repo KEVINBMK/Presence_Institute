@@ -34,7 +34,7 @@ class Visite
     #[ORM\JoinColumn(nullable: false)]
     private Reception $reception;
 
-    #[ORM\Column(type: 'string', enumType: StatutVisite::class)]
+    #[ORM\Column(type: 'string', length: 20, enumType: StatutVisite::class)]
     private StatutVisite $statut = StatutVisite::OUVERTE;
 
     #[ORM\Column(nullable: true)]

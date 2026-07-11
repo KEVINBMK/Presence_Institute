@@ -16,6 +16,16 @@ class PersonnelRepository extends ServiceEntityRepository
         parent::__construct($registry, Personnel::class);
     }
 
+    public function findOneWithBureau(int $id): ?Personnel
+    {
+        return $this->createQueryBuilder('p')
+            ->innerJoin('p.bureau', 'b')->addSelect('b')
+            ->andWhere('p.id = :id')
+            ->setParameter('id', $id)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
     /** @return Personnel[] */
     public function findActifsOrdered(): array
     {
